@@ -21,4 +21,20 @@ export default defineConfig({
       },
     }),
   ],
+
+  server: {
+      allowedHosts: ["club100.local"],
+
+      proxy: {
+        "/api": {
+          target: "http://127.0.0.1:8000",
+          changeOrigin: false,
+          secure: false,
+
+          headers: {
+            Host: "club100.local",
+          },
+        },
+      },
+    },
 });

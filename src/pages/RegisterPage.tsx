@@ -1,0 +1,286 @@
+import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import {
+  Link,
+  useNavigate,
+} from "react-router-dom";
+
+import {
+  register,
+} from "../services/authService";
+
+export default function RegisterPage() {
+  const navigate = useNavigate();
+
+  const [fullName, setFullName] =
+    useState("");
+
+  const [mobile, setMobile] =
+    useState("");
+
+  const [email, setEmail] =
+    useState("");
+
+  const [password, setPassword] =
+    useState("");
+
+  const [confirmPassword, setConfirmPassword] =
+    useState("");
+
+  const [formError, setFormError] =
+    useState("");
+
+  const registerMutation = useMutation({
+    mutationFn: register,
+
+    onSuccess: (response) => {
+        if (
+            response.registrationType ===
+            "NewMember"
+        ) {
+            navigate(
+            "/onboarding",
+            {
+                replace: true,
+            }
+            );
+
+            return;
+        }
+
+        navigate(
+            "/dashboard",
+            {
+            replace: true,
+            }
+        );
+    },
+  });
+
+  const handleSubmit = (
+    event: React.FormEvent
+  ) => {
+    event.preventDefault();
+
+    setFormError("");
+
+    if (!fullName.trim()) {
+      setFormError(
+        "Please enter your full name."
+      );
+
+      return;
+    }
+
+    if (!mobile.trim()) {
+      setFormError(
+        "Please enter your mobile number."
+      );
+
+      return;
+    }
+
+    if (password.length < 8) {
+      setFormError(
+        "Password must be at least 8 characters long."
+      );
+
+      return;
+    }
+
+    if (
+      password !== confirmPassword
+    ) {
+      setFormError(
+        "Passwords do not match."
+      );
+
+      return;
+    }
+
+    registerMutation.mutate({
+      fullName:
+        fullName.trim(),
+
+      mobile:
+        mobile.trim(),
+
+      email:
+        email.trim(),
+
+      password,
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 px-4 py-8">
+      <div className="mx-auto flex min-h-[85vh] max-w-md items-center">
+        <div className="w-full">
+          <div className="text-center">
+            <div className="text-3xl font-bold text-[#12395B]">
+              Club
+              <span className="text-[#2F80ED]">
+                100
+              </span>
+            </div>
+
+            <p className="mt-3 text-slate-600">
+              Live Strong. Age Better.
+              Together.
+            </p>
+          </div>
+
+          <form
+            onSubmit={handleSubmit}
+            className="mt-8 rounded-2xl bg-white p-6 shadow-sm"
+          >
+            <h1 className="text-2xl font-bold text-slate-900">
+              Create your account
+            </h1>
+
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              If you already have a Club100
+              membership, we&apos;ll connect
+              this account to it automatically.
+            </p>
+
+            <div className="mt-6">
+              <label className="text-sm font-medium text-slate-700">
+                Full Name
+              </label>
+
+              <input
+                type="text"
+                value={fullName}
+                onChange={(event) =>
+                  setFullName(
+                    event.target.value
+                  )
+                }
+                autoComplete="name"
+                placeholder="Enter your full name"
+                className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-[#2F80ED]"
+              />
+            </div>
+
+            <div className="mt-5">
+              <label className="text-sm font-medium text-slate-700">
+                Mobile Number
+              </label>
+
+              <input
+                type="tel"
+                value={mobile}
+                onChange={(event) =>
+                  setMobile(
+                    event.target.value
+                  )
+                }
+                autoComplete="tel"
+                placeholder="Enter mobile number"
+                className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-[#2F80ED]"
+              />
+            </div>
+
+            <div className="mt-5">
+              <label className="text-sm font-medium text-slate-700">
+                Email
+                <span className="ml-1 font-normal text-slate-400">
+                  (optional)
+                </span>
+              </label>
+
+              <input
+                type="email"
+                value={email}
+                onChange={(event) =>
+                  setEmail(
+                    event.target.value
+                  )
+                }
+                autoComplete="email"
+                placeholder="Enter email address"
+                className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-[#2F80ED]"
+              />
+            </div>
+
+            <div className="mt-5">
+              <label className="text-sm font-medium text-slate-700">
+                Password
+              </label>
+
+              <input
+                type="password"
+                value={password}
+                onChange={(event) =>
+                  setPassword(
+                    event.target.value
+                  )
+                }
+                autoComplete="new-password"
+                placeholder="Minimum 8 characters"
+                className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-[#2F80ED]"
+              />
+            </div>
+
+            <div className="mt-5">
+              <label className="text-sm font-medium text-slate-700">
+                Confirm Password
+              </label>
+
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(event) =>
+                  setConfirmPassword(
+                    event.target.value
+                  )
+                }
+                autoComplete="new-password"
+                placeholder="Enter password again"
+                className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-[#2F80ED]"
+              />
+            </div>
+
+            {formError && (
+              <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {formError}
+              </div>
+            )}
+
+            {registerMutation.isError && (
+              <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                Registration could not be
+                completed. Please check your
+                details or sign in if you have
+                already registered.
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={
+                registerMutation.isPending
+              }
+              className="mt-6 w-full rounded-xl bg-[#2F80ED] px-4 py-3 font-semibold text-white transition hover:bg-[#1F6FD1] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {registerMutation.isPending
+                ? "Creating Account..."
+                : "Create Account"}
+            </button>
+
+            <p className="mt-6 text-center text-sm text-slate-500">
+              Already registered?{" "}
+              <Link
+                to="/login"
+                className="font-semibold text-[#2F80ED]"
+              >
+                Sign In
+              </Link>
+            </p>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}

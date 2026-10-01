@@ -34,6 +34,10 @@ import TrainerMembersPage from "../../pages/trainer/TrainerMembersPage";
 import TrainerAssessmentsPage from "../../pages/trainer/TrainerAssessmentsPage";
 import TrainerSessionsPage from "../../pages/trainer/TrainerSessionsPage";
 import TrainerProfilePage from "../../pages/trainer/TrainerProfilePage";
+import TrainerMemberDetailPage from "../../pages/trainer/TrainerMemberDetailPage";
+import TrainerStartAssessmentPage from "../../pages/trainer/TrainerStartAssessmentPage";
+import TrainerAssessmentPage from "../../pages/trainer/TrainerAssessmentPage";
+import TrainerAssessmentResultPage from "../../pages/trainer/TrainerAssessmentResultPage";
 
 export default function AppRouter() {
   return (
@@ -188,7 +192,33 @@ export default function AppRouter() {
               path="/trainer/profile"
               element={<TrainerProfilePage />}
             />
+            <Route
+                path="/trainer/members/:memberId"
+                element={
+                    <TrainerMemberDetailPage />
+                }
+                />
+            <Route
+                path="/trainer/assessment/new"
+                element={
+                    <TrainerStartAssessmentPage />
+                }
+                />
+
+            <Route
+                path="/trainer/assessment/:assessmentId"
+                element={
+                    <TrainerAssessmentPage />
+                }
+                />
+            <Route
+                path="/trainer/assessment/:assessmentId/result"
+                element={
+                    <TrainerAssessmentResultPage />
+                }
+                />
           </Route>
+          
         </Route>
 
         {/* ==================================================

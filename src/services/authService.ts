@@ -4,31 +4,42 @@ import {
   clearCsrfToken,
 } from "./api";
 
-export type LoginResponse = {
-  success: boolean;
+export type AppRole =
+  | "member"
+  | "trainer";
 
-  member: {
-    id: string;
-    fullName: string;
-  };
-
-  user: string;
+export type AuthMember = {
+  id: string;
+  fullName: string;
+  onboardingStatus: string;
 };
 
-export type RegisterResponse = {
-  success: boolean;
+export type AuthTrainer = {
+  id: string;
+  trainerName: string;
+  trainerType: string | null;
+};
 
-  registrationType:
-    | "ExistingMember"
-    | "NewMember";
+export type AppUserContext = {
+  user: string;
+  roles: AppRole[];
+  member: AuthMember | null;
+  trainer: AuthTrainer | null;
+};
 
-  member: {
-    id: string;
-    fullName: string;
+export type LoginResponse =
+  AppUserContext & {
+    success: boolean;
   };
 
-  user: string;
-};
+export type RegisterResponse =
+  AppUserContext & {
+    success: boolean;
+
+    registrationType:
+      | "ExistingMember"
+      | "NewMember";
+  };
 
 export type RegisterInput = {
   fullName: string;
@@ -40,16 +51,25 @@ export type RegisterInput = {
 export type SessionStatus = {
   authenticated: boolean;
   user: string | null;
+  roles: AppRole[];
+  member: AuthMember | null;
+  trainer: AuthTrainer | null;
 };
 
 export async function login(
-  mobile: string,
+  loginId: string,
   password: string
 ): Promise<LoginResponse> {
   return apiPost<LoginResponse>(
     "/api/method/club100_core.api.auth.login",
     {
-      mobile,
+      // New generic login identifier.
+      login_id: loginId,
+
+      // Keep this temporarily for backwards
+      // compatibility with member mobile login.
+      mobile: loginId,
+
       password,
     }
   );

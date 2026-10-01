@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import {
   login,
@@ -10,7 +9,7 @@ import {
 export default function LoginPage() {
   const navigate = useNavigate();
 
-  const [mobile, setMobile] =
+  const [loginId, setLoginId] =
     useState("");
 
   const [password, setPassword] =
@@ -18,15 +17,22 @@ export default function LoginPage() {
 
   const loginMutation = useMutation({
     mutationFn: () =>
-      login(mobile, password),
+      login(loginId, password),
 
     onSuccess: (response) => {
-      if (
-        response.member.onboardingStatus !==
-        "Completed"
-      ) {
+      const isTrainer =
+        response.roles.includes("trainer");
+
+      const isMember =
+        response.roles.includes("member");
+
+      // -------------------------------------------------
+      // Trainer takes priority when user has both roles.
+      // -------------------------------------------------
+
+      if (isTrainer) {
         navigate(
-          "/onboarding",
+          "/trainer",
           {
             replace: true,
           }
@@ -35,8 +41,44 @@ export default function LoginPage() {
         return;
       }
 
+      // -------------------------------------------------
+      // Member-only flow
+      // -------------------------------------------------
+
+      if (
+        isMember &&
+        response.member
+      ) {
+        if (
+          response.member.onboardingStatus !==
+          "Completed"
+        ) {
+          navigate(
+            "/onboarding",
+            {
+              replace: true,
+            }
+          );
+
+          return;
+        }
+
+        navigate(
+          "/dashboard",
+          {
+            replace: true,
+          }
+        );
+
+        return;
+      }
+
+      // -------------------------------------------------
+      // Defensive fallback
+      // -------------------------------------------------
+
       navigate(
-        "/dashboard",
+        "/login",
         {
           replace: true,
         }
@@ -50,7 +92,7 @@ export default function LoginPage() {
     event.preventDefault();
 
     if (
-      !mobile.trim() ||
+      !loginId.trim() ||
       !password
     ) {
       return;
@@ -63,6 +105,10 @@ export default function LoginPage() {
     <div className="min-h-screen bg-slate-50 px-4 py-8">
       <div className="mx-auto flex min-h-[80vh] max-w-md items-center">
         <div className="w-full">
+          {/* ============================================
+              Brand
+          ============================================ */}
+
           <div className="text-center">
             <div className="text-3xl font-bold text-[#12395B]">
               Club
@@ -77,6 +123,10 @@ export default function LoginPage() {
             </p>
           </div>
 
+          {/* ============================================
+              Login form
+          ============================================ */}
+
           <form
             onSubmit={handleSubmit}
             className="mt-8 rounded-2xl bg-white p-6 shadow-sm"
@@ -90,24 +140,28 @@ export default function LoginPage() {
               account.
             </p>
 
+            {/* Login ID */}
+
             <div className="mt-6">
               <label className="text-sm font-medium text-slate-700">
-                Mobile Number
+                Mobile Number or Email
               </label>
 
               <input
-                type="tel"
-                value={mobile}
+                type="text"
+                value={loginId}
                 onChange={(event) =>
-                  setMobile(
+                  setLoginId(
                     event.target.value
                   )
                 }
-                autoComplete="tel"
-                placeholder="Enter mobile number"
+                autoComplete="username"
+                placeholder="Enter mobile number or email"
                 className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-[#2F80ED]"
               />
             </div>
+
+            {/* Password */}
 
             <div className="mt-5">
               <label className="text-sm font-medium text-slate-700">
@@ -128,18 +182,21 @@ export default function LoginPage() {
               />
             </div>
 
+            {/* Error */}
+
             {loginMutation.isError && (
               <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                Invalid mobile number or
-                password.
+                Invalid login ID or password.
               </div>
             )}
+
+            {/* Submit */}
 
             <button
               type="submit"
               disabled={
                 loginMutation.isPending ||
-                !mobile.trim() ||
+                !loginId.trim() ||
                 !password
               }
               className="mt-6 w-full rounded-xl bg-[#2F80ED] px-4 py-3 font-semibold text-white transition hover:bg-[#1F6FD1] disabled:cursor-not-allowed disabled:opacity-60"
@@ -149,20 +206,27 @@ export default function LoginPage() {
                 : "Sign In"}
             </button>
 
-            <Link
-              to="/forgot-password"
-              className="text-sm font-semibold text-[#2F80ED]"
+            {/* Forgot password */}
+
+            <div className="mt-4 text-center">
+              <Link
+                to="/forgot-password"
+                className="text-sm font-semibold text-[#2F80ED]"
               >
                 Forgot password?
-            </Link>
+              </Link>
+            </div>
+
+            {/* Registration */}
+
             <p className="mt-6 text-center text-sm text-slate-500">
-                New to Club100?{" "}
-                <Link
-                  to="/register"
-                  className="font-semibold text-[#2F80ED]"
-                >
-                  Create Account
-                </Link>
+              New to Club100?{" "}
+              <Link
+                to="/register"
+                className="font-semibold text-[#2F80ED]"
+              >
+                Create Account
+              </Link>
             </p>
           </form>
         </div>

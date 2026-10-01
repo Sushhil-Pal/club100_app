@@ -6,8 +6,11 @@ import {
 } from "react-router-dom";
 
 import AppShell from "../../components/layout/AppShell";
+import TrainerAppShell from "../../components/layout/TrainerAppShell";
 
 import ProtectedRoute from "../../components/auth/ProtectedRoute";
+import MemberRoute from "../../components/auth/MemberRoute";
+import TrainerRoute from "../../components/auth/TrainerRoute";
 import OnboardingGuard from "../../components/auth/OnboardingGuard";
 
 import LoginPage from "../../pages/LoginPage";
@@ -25,6 +28,12 @@ import ProfilePage from "../../pages/ProfilePage";
 
 import SessionPage from "../../pages/SessionPage";
 import FeedbackPage from "../../pages/FeedbackPage";
+
+import TrainerTodayPage from "../../pages/trainer/TrainerTodayPage";
+import TrainerMembersPage from "../../pages/trainer/TrainerMembersPage";
+import TrainerAssessmentsPage from "../../pages/trainer/TrainerAssessmentsPage";
+import TrainerSessionsPage from "../../pages/trainer/TrainerSessionsPage";
+import TrainerProfilePage from "../../pages/trainer/TrainerProfilePage";
 
 export default function AppRouter() {
   return (
@@ -55,88 +64,131 @@ export default function AppRouter() {
         />
 
         {/* ==================================================
-            Onboarding
+            Member onboarding
 
-            Must be authenticated, but onboarding does NOT
-            need to be completed to access this page.
-        ================================================== */}
-
-        <Route
-          path="/onboarding"
-          element={
-            <ProtectedRoute>
-              <OnboardingPage />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* ==================================================
-            Authenticated + onboarding completed routes
+            Authenticated + member role required.
+            Completion is NOT required to access onboarding.
         ================================================== */}
 
         <Route
           element={
             <ProtectedRoute>
-              <OnboardingGuard />
+              <MemberRoute />
             </ProtectedRoute>
           }
         >
-          {/* ================================================
-              Main application shell
-          ================================================ */}
+          <Route
+            path="/onboarding"
+            element={<OnboardingPage />}
+          />
+        </Route>
 
-          <Route element={<AppShell />}>
+        {/* ==================================================
+            Member application
+        ================================================== */}
+
+        <Route
+          element={
+            <ProtectedRoute>
+              <MemberRoute />
+            </ProtectedRoute>
+          }
+        >
+          <Route element={<OnboardingGuard />}>
+            {/* ==============================================
+                Member application shell
+            ============================================== */}
+
+            <Route element={<AppShell />}>
+              <Route
+                path="/"
+                element={
+                  <Navigate
+                    to="/dashboard"
+                    replace
+                  />
+                }
+              />
+
+              <Route
+                path="/dashboard"
+                element={<DashboardPage />}
+              />
+
+              <Route
+                path="/schedule"
+                element={<SchedulePage />}
+              />
+
+              <Route
+                path="/progress"
+                element={<ProgressPage />}
+              />
+
+              <Route
+                path="/program"
+                element={<ProgramPage />}
+              />
+
+              <Route
+                path="/profile"
+                element={<ProfilePage />}
+              />
+            </Route>
+
+            {/* ==============================================
+                Member immersive routes
+            ============================================== */}
+
             <Route
-              path="/"
-              element={
-                <Navigate
-                  to="/dashboard"
-                  replace
-                />
-              }
+              path="/session/:id"
+              element={<SessionPage />}
             />
 
             <Route
-              path="/dashboard"
-              element={<DashboardPage />}
-            />
-
-            <Route
-              path="/schedule"
-              element={<SchedulePage />}
-            />
-
-            <Route
-              path="/progress"
-              element={<ProgressPage />}
-            />
-
-            <Route
-              path="/program"
-              element={<ProgramPage />}
-            />
-
-            <Route
-              path="/profile"
-              element={<ProfilePage />}
+              path="/feedback/:sessionId"
+              element={<FeedbackPage />}
             />
           </Route>
+        </Route>
 
-          {/* ================================================
-              Immersive routes
+        {/* ==================================================
+            Trainer application
+        ================================================== */}
 
-              These intentionally sit outside AppShell.
-          ================================================ */}
+        <Route
+          element={
+            <ProtectedRoute>
+              <TrainerRoute />
+            </ProtectedRoute>
+          }
+        >
+          <Route element={<TrainerAppShell />}>
+            <Route
+              path="/trainer"
+              element={<TrainerTodayPage />}
+            />
 
-          <Route
-            path="/session/:id"
-            element={<SessionPage />}
-          />
+            <Route
+              path="/trainer/members"
+              element={<TrainerMembersPage />}
+            />
 
-          <Route
-            path="/feedback/:sessionId"
-            element={<FeedbackPage />}
-          />
+            <Route
+              path="/trainer/assessments"
+              element={<TrainerAssessmentsPage />}
+            />
+
+            <Route
+              path="/trainer/sessions"
+              element={<TrainerSessionsPage />}
+            />
+
+            <Route
+              path="/trainer/profile"
+              element={<TrainerProfilePage />}
+            />
+          </Route>
         </Route>
 
         {/* ==================================================

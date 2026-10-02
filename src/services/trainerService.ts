@@ -240,6 +240,36 @@ export type TrainerAssessmentResult = {
       weight: number | null;
       notes: string | null;
     }[];
+
+    previousAssessment: {
+      id: string;
+
+      assessmentType: string;
+      assessmentDate: string;
+
+      fitnessScore: number | null;
+      fitnessLevel: string | null;
+
+      categories: {
+        category: string;
+        score: number | null;
+      }[];
+
+      metrics: {
+        metric: string;
+        metricName: string;
+        category: string;
+
+        value: number | null;
+        textValue: string | null;
+        unit: string | null;
+
+        score: number | null;
+        rating: string | null;
+
+        includeInScore: boolean;
+      }[];
+    } | null;
   };
 };
 

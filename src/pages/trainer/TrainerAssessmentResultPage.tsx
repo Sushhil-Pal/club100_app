@@ -52,6 +52,68 @@ function formatMetricValue(
     : String(value);
 }
 
+function scoreDifference(
+  current: number | null,
+  previous: number | null
+): number | null {
+  if (
+    current === null ||
+    current === undefined ||
+    previous === null ||
+    previous === undefined
+  ) {
+    return null;
+  }
+
+  return Math.round(
+    current - previous
+  );
+}
+
+function ChangeBadge({
+  current,
+  previous,
+}: {
+  current: number | null;
+  previous: number | null;
+}) {
+  const difference =
+    scoreDifference(
+      current,
+      previous
+    );
+
+  if (difference === null) {
+    return (
+      <span className="text-xs text-slate-400">
+        —
+      </span>
+    );
+  }
+
+  if (difference > 0) {
+    return (
+      <span className="inline-flex rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
+        +{difference}
+      </span>
+    );
+  }
+
+  if (difference < 0) {
+    return (
+      <span className="inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
+        {difference}
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+      No change
+    </span>
+  );
+}
+
 export default function TrainerAssessmentResultPage() {
   const navigate =
     useNavigate();
@@ -153,6 +215,41 @@ export default function TrainerAssessmentResultPage() {
     resultQuery.data
       .assessment;
 
+  const previous =
+    assessment.previousAssessment;
+
+  function getPreviousCategoryScore(
+    category: string
+  ): number | null {
+    if (!previous) {
+      return null;
+    }
+
+    return (
+      previous.categories.find(
+        (item) =>
+          item.category ===
+          category
+      )?.score ?? null
+    );
+  }
+
+  function getPreviousMetric(
+    metricId: string
+  ) {
+    if (!previous) {
+      return null;
+    }
+
+    return (
+      previous.metrics.find(
+        (item) =>
+          item.metric ===
+          metricId
+      ) ?? null
+    );
+  }
+
   return (
     <div>
       {/* Header */}
@@ -233,6 +330,125 @@ export default function TrainerAssessmentResultPage() {
         )}
       </section>
 
+      {/* Overall/category comparison */}
+
+      {previous && (
+        <section className="mt-6 rounded-2xl bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#2F80ED]">
+            Progress
+          </p>
+
+          <h2 className="mt-1 text-lg font-bold text-[#12395B]">
+            Since Previous Assessment
+          </h2>
+
+          <p className="mt-1 text-sm text-slate-500">
+            Compared with{" "}
+            {
+              previous.assessmentType
+            }{" "}
+            on{" "}
+            {
+              previous.assessmentDate
+            }
+          </p>
+
+          <div className="mt-5 rounded-2xl bg-[#F5FAFE] p-5">
+            <div className="grid grid-cols-3 items-center gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">
+                  Previous
+                </p>
+
+                <p className="mt-1 text-2xl font-bold text-slate-600">
+                  {formatScore(
+                    previous.fitnessScore
+                  )}
+                </p>
+              </div>
+
+              <div className="text-center">
+                <p className="text-xs uppercase tracking-wide text-slate-400">
+                  Change
+                </p>
+
+                <div className="mt-2">
+                  <ChangeBadge
+                    current={
+                      assessment.fitnessScore
+                    }
+                    previous={
+                      previous.fitnessScore
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="text-right">
+                <p className="text-xs uppercase tracking-wide text-slate-400">
+                  Current
+                </p>
+
+                <p className="mt-1 text-2xl font-bold text-[#12395B]">
+                  {formatScore(
+                    assessment.fitnessScore
+                  )}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-5 divide-y divide-slate-100">
+            {assessment.categories.map(
+              (category) => {
+                const previousScore =
+                  getPreviousCategoryScore(
+                    category.category
+                  );
+
+                return (
+                  <div
+                    key={
+                      category.category
+                    }
+                    className="flex items-center justify-between gap-4 py-4"
+                  >
+                    <div>
+                      <p className="font-medium text-slate-800">
+                        {
+                          category.category
+                        }
+                      </p>
+
+                      <p className="mt-1 text-xs text-slate-500">
+                        Previous{" "}
+                        {formatScore(
+                          previousScore
+                        )}
+                        {" → "}
+                        Current{" "}
+                        {formatScore(
+                          category.score
+                        )}
+                      </p>
+                    </div>
+
+                    <ChangeBadge
+                      current={
+                        category.score
+                      }
+                      previous={
+                        previousScore
+                      }
+                    />
+                  </div>
+                );
+              }
+            )}
+          </div>
+        </section>
+      )}
+
       {/* Category scores */}
 
       <section className="mt-6 rounded-2xl bg-white p-5 shadow-sm">
@@ -297,7 +513,142 @@ export default function TrainerAssessmentResultPage() {
         </div>
       </section>
 
-      {/* Detailed metrics */}
+      {/* Metric-level progress */}
+
+      {previous && (
+        <section className="mt-6 rounded-2xl bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#2F80ED]">
+            Detailed Progress
+          </p>
+
+          <h2 className="mt-1 text-lg font-bold text-[#12395B]">
+            Metric-Level Comparison
+          </h2>
+
+          <p className="mt-1 text-sm text-slate-500">
+            Change is based on the
+            normalized Club100 metric
+            score.
+          </p>
+
+          <div className="mt-5 space-y-6">
+            {Object.entries(
+              metricsByCategory
+            ).map(
+              ([
+                category,
+                metrics,
+              ]) => (
+                <div
+                  key={
+                    category
+                  }
+                >
+                  <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
+                    {category}
+                  </h3>
+
+                  <div className="mt-2 divide-y divide-slate-100">
+                    {metrics.map(
+                      (
+                        metric
+                      ) => {
+                        const previousMetric =
+                          getPreviousMetric(
+                            metric.metric
+                          );
+
+                        return (
+                          <div
+                            key={
+                              metric.metric
+                            }
+                            className="py-4"
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="min-w-0">
+                                <p className="font-medium text-slate-800">
+                                  {
+                                    metric.metricName
+                                  }
+                                </p>
+
+                                <div className="mt-2 grid grid-cols-2 gap-4 text-sm">
+                                  <div>
+                                    <p className="text-xs text-slate-400">
+                                      Previous
+                                    </p>
+
+                                    <p className="mt-1 font-medium text-slate-600">
+                                      {previousMetric
+                                        ? formatMetricValue(
+                                            previousMetric.value,
+                                            previousMetric.textValue,
+                                            previousMetric.unit
+                                          )
+                                        : "—"}
+                                    </p>
+
+                                    {previousMetric?.includeInScore && (
+                                      <p className="mt-1 text-xs text-slate-400">
+                                        Score{" "}
+                                        {formatScore(
+                                          previousMetric.score
+                                        )}
+                                      </p>
+                                    )}
+                                  </div>
+
+                                  <div>
+                                    <p className="text-xs text-slate-400">
+                                      Current
+                                    </p>
+
+                                    <p className="mt-1 font-semibold text-[#12395B]">
+                                      {formatMetricValue(
+                                        metric.value,
+                                        metric.textValue,
+                                        metric.unit
+                                      )}
+                                    </p>
+
+                                    {metric.includeInScore && (
+                                      <p className="mt-1 text-xs text-slate-500">
+                                        Score{" "}
+                                        {formatScore(
+                                          metric.score
+                                        )}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {metric.includeInScore &&
+                                previousMetric?.includeInScore && (
+                                  <ChangeBadge
+                                    current={
+                                      metric.score
+                                    }
+                                    previous={
+                                      previousMetric.score
+                                    }
+                                  />
+                                )}
+                            </div>
+                          </div>
+                        );
+                      }
+                    )}
+                  </div>
+                </div>
+              )
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* Current detailed metrics */}
 
       <div className="mt-6 space-y-6">
         {Object.entries(
@@ -308,7 +659,9 @@ export default function TrainerAssessmentResultPage() {
             metrics,
           ]) => (
             <section
-              key={category}
+              key={
+                category
+              }
               className="rounded-2xl bg-white p-5 shadow-sm"
             >
               <h2 className="text-lg font-bold text-[#12395B]">
@@ -317,7 +670,9 @@ export default function TrainerAssessmentResultPage() {
 
               <div className="mt-4 divide-y divide-slate-100">
                 {metrics.map(
-                  (metric) => (
+                  (
+                    metric
+                  ) => (
                     <div
                       key={
                         metric.metric

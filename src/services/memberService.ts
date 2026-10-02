@@ -97,3 +97,133 @@ export async function completeOnboarding(
     }
   );
 }
+
+
+export type MemberProgress = {
+  hasAssessment: boolean;
+
+  hasPreviousAssessment: boolean;
+
+  currentAssessment: {
+    id: string;
+    type: string;
+    date: string;
+    fitnessLevel: string | null;
+  } | null;
+
+  previousAssessment: {
+    id: string;
+    type: string;
+    date: string;
+    fitnessLevel: string | null;
+  } | null;
+
+  fitnessScore: {
+    current: number | null;
+    previous: number | null;
+    change: number | null;
+  };
+
+  categoryScores: {
+    category: string;
+    current: number | null;
+    previous: number | null;
+    change: number | null;
+  }[];
+
+  assessments: {
+    id: string;
+    type: string;
+    date: string;
+    score: number | null;
+    fitnessLevel: string | null;
+    change: number | null;
+  }[];
+};
+
+export async function getMemberProgress(): Promise<MemberProgress> {
+  return apiGet<MemberProgress>(
+    "/api/method/club100_core.api.member.progress"
+  );
+}
+
+export type MemberAssessmentResult = {
+  assessment: {
+    id: string;
+
+    assessmentType: string;
+    assessmentDate: string;
+    deliveryMode: string;
+
+    fitnessScore: number | null;
+    fitnessLevel: string | null;
+
+    categories: {
+      category: string;
+      score: number | null;
+      weight: number | null;
+      metricsScored: number;
+    }[];
+
+    metrics: {
+      metric: string;
+      metricName: string;
+      category: string;
+
+      value: number | null;
+      textValue: string | null;
+      unit: string | null;
+
+      score: number | null;
+      rating: string | null;
+
+      includeInScore: boolean;
+    }[];
+
+    previousAssessment: {
+      id: string;
+
+      assessmentType: string;
+      assessmentDate: string;
+
+      fitnessScore: number | null;
+      fitnessLevel: string | null;
+
+      categories: {
+        category: string;
+        score: number | null;
+      }[];
+
+      metrics: {
+        metric: string;
+        metricName: string;
+        category: string;
+
+        value: number | null;
+        textValue: string | null;
+        unit: string | null;
+
+        score: number | null;
+        rating: string | null;
+
+        includeInScore: boolean;
+      }[];
+    } | null;
+  };
+};
+
+export async function getMemberAssessmentResult(
+  assessmentId: string
+): Promise<MemberAssessmentResult> {
+  const params =
+    new URLSearchParams();
+
+  params.set(
+    "assessment_id",
+    assessmentId
+  );
+
+  return apiGet<MemberAssessmentResult>(
+    `/api/method/club100_core.api.member.assessment_result?${params.toString()}`
+  );
+}

@@ -39,6 +39,7 @@ import TrainerStartAssessmentPage from "../../pages/trainer/TrainerStartAssessme
 import TrainerAssessmentPage from "../../pages/trainer/TrainerAssessmentPage";
 import TrainerAssessmentResultPage from "../../pages/trainer/TrainerAssessmentResultPage";
 import TrainerSessionDetailPage from "../../pages/trainer/TrainerSessionDetailPage";
+import MemberAssessmentResultPage from "../../pages/MemberAssessmentResultPage";
 
 export default function AppRouter() {
   return (
@@ -129,6 +130,13 @@ export default function AppRouter() {
                 path="/progress"
                 element={<ProgressPage />}
               />
+
+              <Route
+                path="/progress/:assessmentId"
+                element={
+                    <MemberAssessmentResultPage />
+                }
+                />
 
               <Route
                 path="/program"

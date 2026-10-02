@@ -1,13 +1,62 @@
-import { useQuery } from "@tanstack/react-query";
+import {
+  useNavigate,
+} from "react-router-dom";
+
+import {
+  useQuery,
+} from "@tanstack/react-query";
 
 import PageContainer from "../components/layout/PageContainer";
-import { getProgressSummary } from "../services/progressService";
+
+import {
+  getMemberProgress,
+} from "../services/memberService";
+
+function ChangeBadge({
+  value,
+}: {
+  value: number | null;
+}) {
+  if (value === null) {
+    return null;
+  }
+
+  if (value > 0) {
+    return (
+      <span className="rounded-full bg-green-50 px-3 py-1 text-sm font-semibold text-green-700">
+        +{value}
+      </span>
+    );
+  }
+
+  if (value < 0) {
+    return (
+      <span className="rounded-full bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-700">
+        {value}
+      </span>
+    );
+  }
+
+  return (
+    <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600">
+      No change
+    </span>
+  );
+}
 
 export default function ProgressPage() {
-  const progressQuery = useQuery({
-    queryKey: ["progress-summary"],
-    queryFn: getProgressSummary,
-  });
+  const navigate =
+    useNavigate();
+
+  const progressQuery =
+    useQuery({
+      queryKey: [
+        "member-progress",
+      ],
+
+      queryFn:
+        getMemberProgress,
+    });
 
   if (progressQuery.isLoading) {
     return (
@@ -21,26 +70,39 @@ export default function ProgressPage() {
     );
   }
 
-  if (progressQuery.isError) {
+  if (
+    progressQuery.isError ||
+    !progressQuery.data
+  ) {
     return (
       <PageContainer>
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
-          <p className="font-medium text-red-600">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
+          <p className="font-medium text-red-700">
             We couldn&apos;t load your progress.
           </p>
+
+          {progressQuery.error instanceof
+            Error && (
+            <p className="mt-2 text-sm text-red-700">
+              {
+                progressQuery.error
+                  .message
+              }
+            </p>
+          )}
         </div>
       </PageContainer>
     );
   }
 
-  const progress = progressQuery.data;
-
-  const hasAssessment =
-    progress.assessments.length > 0;
+  const progress =
+    progressQuery.data;
 
   return (
     <PageContainer>
       <div className="space-y-6">
+        {/* Header */}
+
         <div>
           <h1 className="text-3xl font-bold text-[#12395B] md:text-4xl">
             My Progress
@@ -51,7 +113,7 @@ export default function ProgressPage() {
           </p>
         </div>
 
-        {!hasAssessment ? (
+        {!progress.hasAssessment ? (
           <section className="rounded-2xl bg-white p-6 shadow-sm">
             <h2 className="text-xl font-semibold text-slate-900">
               No assessment yet
@@ -64,118 +126,220 @@ export default function ProgressPage() {
           </section>
         ) : (
           <>
+            {/* Overall Score */}
+
             <section className="rounded-2xl bg-white p-6 shadow-sm">
               <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-                Fitness Score
+                Club100 Fitness Score
               </p>
 
-              <div className="mt-4 flex items-end gap-3">
+              <div className="mt-4 flex flex-wrap items-end gap-3">
                 <span className="text-5xl font-bold text-[#12395B]">
-                  {progress.fitnessScore.current}
+                  {progress.fitnessScore.current ??
+                    "—"}
                 </span>
 
-                {progress.hasReassessment && (
-                  <span className="mb-1 rounded-full bg-green-50 px-3 py-1 text-sm font-semibold text-green-700">
-                    {progress.fitnessScore.change >= 0 ? "+" : ""}
-                    {progress.fitnessScore.change}
-                  </span>
+                {progress.hasPreviousAssessment && (
+                  <ChangeBadge
+                    value={
+                      progress.fitnessScore.change
+                    }
+                  />
                 )}
               </div>
 
-              {progress.hasReassessment ? (
-                <p className="mt-2 text-sm text-slate-500">
-                  Since baseline assessment
+              {progress.currentAssessment
+                ?.fitnessLevel && (
+                <p className="mt-2 font-medium text-[#12395B]">
+                  {
+                    progress.currentAssessment
+                      .fitnessLevel
+                  }
                 </p>
+              )}
+
+              {progress.hasPreviousAssessment ? (
+                <div className="mt-4 text-sm text-slate-500">
+                  <p>
+                    Change since your previous assessment
+                  </p>
+
+                  {progress.previousAssessment && (
+                    <p className="mt-1">
+                      Previous assessment:{" "}
+                      {
+                        progress.previousAssessment
+                          .date
+                      }
+                    </p>
+                  )}
+                </div>
               ) : (
-                <div className="mt-3">
+                <div className="mt-4">
                   <p className="font-medium text-[#12395B]">
                     Baseline Assessment
                   </p>
 
                   <p className="mt-1 text-sm text-slate-500">
-                    Your starting fitness score
+                    This is your starting fitness score.
                   </p>
                 </div>
               )}
             </section>
 
+            {/* Categories */}
+
             <section className="rounded-2xl bg-white p-6 shadow-sm">
               <h2 className="text-xl font-semibold text-slate-900">
-                Category Scores
+                Category Progress
               </h2>
 
-              <div className="mt-6 space-y-5">
-                {progress.categoryScores.map((item) => (
-                  <div key={item.label}>
-                    <div className="flex items-center justify-between gap-4">
-                      <span className="font-medium text-slate-700">
-                        {item.label}
-                      </span>
+              <p className="mt-1 text-sm text-slate-500">
+                Your current score across the five Club100
+                fitness areas.
+              </p>
 
-                      {progress.hasReassessment ? (
-                        <div className="text-sm">
-                          <span className="text-slate-400">
-                            {item.baseline}
-                          </span>
+              <div className="mt-6 space-y-6">
+                {progress.categoryScores.map(
+                  (item) => (
+                    <div
+                      key={
+                        item.category
+                      }
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="font-medium text-slate-700">
+                            {
+                              item.category
+                            }
+                          </p>
 
-                          <span className="mx-2 text-slate-400">
-                            →
-                          </span>
-
-                          <span className="font-semibold text-[#12395B]">
-                            {item.current}
-                          </span>
+                          {progress.hasPreviousAssessment &&
+                            item.previous !==
+                              null && (
+                              <p className="mt-1 text-xs text-slate-400">
+                                Previous:{" "}
+                                {
+                                  item.previous
+                                }
+                              </p>
+                            )}
                         </div>
-                      ) : (
-                        <span className="font-semibold text-[#12395B]">
-                          {item.baseline}
-                        </span>
-                      )}
-                    </div>
 
-                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
-                      <div
-                        className="h-full rounded-full bg-[#2F80ED]"
-                        style={{
-                          width: `${
-                            progress.hasReassessment
-                              ? item.current
-                              : item.baseline
-                          }%`,
-                        }}
-                      />
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg font-bold text-[#12395B]">
+                            {item.current ??
+                              "—"}
+                          </span>
+
+                          {progress.hasPreviousAssessment && (
+                            <ChangeBadge
+                              value={
+                                item.change
+                              }
+                            />
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
+                        <div
+                          className="h-full rounded-full bg-[#2F80ED]"
+                          style={{
+                            width: `${
+                              item.current ??
+                              0
+                            }%`,
+                          }}
+                        />
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                )}
               </div>
             </section>
+
+            {/* Assessment History */}
 
             <section className="rounded-2xl bg-white p-6 shadow-sm">
               <h2 className="text-xl font-semibold text-slate-900">
                 Assessment History
               </h2>
 
+              <p className="mt-1 text-sm text-slate-500">
+                Your fitness journey over time.
+              </p>
+
               <div className="mt-5 divide-y divide-slate-100">
-                {progress.assessments.map((assessment) => (
-                  <div
-                    key={assessment.id}
-                    className="flex items-center justify-between py-4"
-                  >
-                    <div>
-                      <p className="font-medium text-slate-800">
-                        {assessment.type}
-                      </p>
+                {progress.assessments.map(
+                  (
+                    assessment,
+                    index
+                  ) => (
+                    <div
+                      key={
+                        assessment.id
+                      }
+                      className="flex flex-col gap-4 py-5 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-medium text-slate-800">
+                            {
+                              assessment.type
+                            }
+                          </p>
 
-                      <p className="mt-1 text-sm text-slate-500">
-                        {assessment.date}
-                      </p>
-                    </div>
+                          {index === 0 && (
+                            <span className="rounded-full bg-blue-50 px-2 py-1 text-xs font-semibold text-[#2F80ED]">
+                              Latest
+                            </span>
+                          )}
+                        </div>
 
-                    <div className="text-2xl font-bold text-[#12395B]">
-                      {assessment.score}
+                        <p className="mt-1 text-sm text-slate-500">
+                          {
+                            assessment.date
+                          }
+                        </p>
+
+                        {assessment.fitnessLevel && (
+                          <p className="mt-1 text-sm text-slate-500">
+                            {
+                              assessment.fitnessLevel
+                            }
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span className="text-2xl font-bold text-[#12395B]">
+                          {assessment.score ??
+                            "—"}
+                        </span>
+
+                        <ChangeBadge
+                          value={
+                            assessment.change
+                          }
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            navigate(
+                              `/progress/${assessment.id}`
+                            )
+                          }
+                          className="rounded-xl border border-[#2F80ED] px-4 py-2 text-sm font-semibold text-[#2F80ED] transition hover:bg-[#F5FAFE]"
+                        >
+                          View Result
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                )}
               </div>
             </section>
           </>

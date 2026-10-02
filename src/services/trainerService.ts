@@ -61,9 +61,26 @@ export type TrainerMemberDetail = {
     date: string;
     fitnessScore: number | null;
     fitnessLevel: string | null;
+    scoreChange: number | null;
   } | null;
 
   assessmentCount: number;
+
+  assessmentHistory: {
+    id: string;
+    type: string;
+    date: string;
+    fitnessScore: number | null;
+    fitnessLevel: string | null;
+    scoreChange: number | null;
+  }[];
+
+  draftAssessment: {
+    id: string;
+    type: string;
+    date: string;
+    modified: string;
+  } | null;
 };
 
 export async function getTrainerMemberDetail(

@@ -91,6 +91,8 @@ export type StartAssessmentResponse = {
     assessmentDate: string;
     template: string;
   };
+
+  resumed: boolean;
 };
 
 export async function startTrainerAssessment(
@@ -100,7 +102,6 @@ export async function startTrainerAssessment(
     "/api/method/club100_core.api.trainer.start_assessment",
     {
       member_id: memberId,
-      assessment_type: "Baseline",
       delivery_mode: "Offline",
     }
   );
@@ -193,4 +194,124 @@ export async function saveTrainerAssessment(
       status,
     }
   );
+}
+
+export type TrainerAssessmentResult = {
+  assessment: {
+    id: string;
+
+    member: {
+      id: string;
+      fullName: string;
+      gender: string | null;
+      dateOfBirth: string | null;
+    };
+
+    assessmentType: string;
+    assessmentDate: string;
+    deliveryMode: string;
+    status: string;
+
+    fitnessScore: number | null;
+    fitnessLevel: string | null;
+
+    categories: {
+      category: string;
+      score: number | null;
+      weight: number | null;
+      metricsScored: number;
+    }[];
+
+    metrics: {
+      metric: string;
+      metricName: string;
+      category: string;
+
+      value: number | null;
+      textValue: string | null;
+      unit: string | null;
+
+      score: number | null;
+      rating: string | null;
+
+      required: boolean;
+      includeInScore: boolean;
+
+      weight: number | null;
+      notes: string | null;
+    }[];
+  };
+};
+
+export async function getTrainerAssessmentResult(
+  assessmentId: string
+): Promise<TrainerAssessmentResult> {
+  const params =
+    new URLSearchParams();
+
+  params.set(
+    "assessment_id",
+    assessmentId
+  );
+
+  return apiGet<TrainerAssessmentResult>(
+    `/api/method/club100_core.api.trainer.assessment_result?${params.toString()}`
+  );
+}
+
+
+export type TrainerAssessmentSummary = {
+  id: string;
+
+  member: {
+    id: string;
+    fullName: string;
+    mobile: string | null;
+  };
+
+  assessmentType: string;
+  assessmentDate: string;
+  deliveryMode: string;
+  status: string;
+
+  fitnessScore: number | null;
+  fitnessLevel: string | null;
+};
+
+type TrainerAssessmentsResponse = {
+  assessments:
+    TrainerAssessmentSummary[];
+};
+
+export async function getTrainerAssessments(
+  search = "",
+  status = ""
+): Promise<
+  TrainerAssessmentSummary[]
+> {
+  const params =
+    new URLSearchParams();
+
+  if (search.trim()) {
+    params.set(
+      "search",
+      search.trim()
+    );
+  }
+
+  if (status) {
+    params.set(
+      "status",
+      status
+    );
+  }
+
+  const result =
+    await apiGet<
+      TrainerAssessmentsResponse
+    >(
+      `/api/method/club100_core.api.trainer.assessments?${params.toString()}`
+    );
+
+  return result.assessments;
 }

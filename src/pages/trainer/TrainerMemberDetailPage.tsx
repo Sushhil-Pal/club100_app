@@ -115,7 +115,9 @@ export default function TrainerMemberDetailPage() {
             }
             className="rounded-xl bg-[#2F80ED] px-5 py-3 font-semibold text-white transition hover:bg-[#1F6FD1]"
           >
-            Start Assessment
+            {memberQuery.data.assessmentCount > 0
+                ? "Start Reassessment"
+                : "Start Assessment"}
           </button>
         </div>
       </div>

@@ -215,3 +215,46 @@ export async function apiPost<T>(
       : null
   ) as T;
 }
+
+export async function apiPostForm<T>(
+  path: string,
+  formData: FormData
+): Promise<T> {
+  const token =
+    await getCsrfToken();
+
+  const response = await fetch(
+    path,
+    {
+      method: "POST",
+
+      credentials: "include",
+
+      headers: {
+        "X-Frappe-CSRF-Token":
+          token,
+      },
+
+      body: formData,
+    }
+  );
+
+  if (!response.ok) {
+    await throwApiError(
+      response
+    );
+  }
+
+  const data =
+    await response.json();
+
+  return (
+    Object.prototype
+      .hasOwnProperty.call(
+        data,
+        "message"
+      )
+      ? data.message
+      : null
+  ) as T;
+}

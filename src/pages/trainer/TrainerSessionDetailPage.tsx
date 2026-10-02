@@ -16,9 +16,11 @@ import {
 } from "@tanstack/react-query";
 
 import {
+  cancelTrainerSession,
   completeTrainerSession,
   getTrainerSessionDetail,
   saveTrainerSessionAttendance,
+  startTrainerSession,
   type SaveSessionAttendanceInput,
 } from "../../services/trainerService";
 
@@ -36,13 +38,16 @@ type AttendanceState = {
 function StatusButton({
   label,
   selected,
+  disabled,
   onClick,
 }: {
   label:
     | "Present"
     | "Partial"
     | "Absent";
+
   selected: boolean;
+  disabled: boolean;
   onClick: () => void;
 }) {
   const selectedClass =
@@ -55,12 +60,16 @@ function StatusButton({
   return (
     <button
       type="button"
+      disabled={disabled}
       onClick={onClick}
       className={[
         "rounded-lg border px-3 py-2 text-xs font-semibold transition",
         selected
           ? selectedClass
           : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50",
+        disabled
+          ? "cursor-not-allowed opacity-50"
+          : "",
       ].join(" ")}
     >
       {label}
@@ -289,6 +298,85 @@ export default function TrainerSessionDetailPage() {
               "trainer-sessions",
             ],
           });
+
+        await queryClient
+          .invalidateQueries({
+            queryKey: [
+              "trainer-today",
+            ],
+          });
+      },
+    });
+
+  const startMutation =
+    useMutation({
+      mutationFn: () =>
+        startTrainerSession(
+          sessionId!
+        ),
+
+      onSuccess: async () => {
+        setSaveMessage(
+          "Session started."
+        );
+
+        await queryClient
+          .invalidateQueries({
+            queryKey: [
+              "trainer-session",
+              sessionId,
+            ],
+          });
+
+        await queryClient
+          .invalidateQueries({
+            queryKey: [
+              "trainer-sessions",
+            ],
+          });
+
+        await queryClient
+          .invalidateQueries({
+            queryKey: [
+              "trainer-today",
+            ],
+          });
+      },
+    });
+
+  const cancelMutation =
+    useMutation({
+      mutationFn: () =>
+        cancelTrainerSession(
+          sessionId!
+        ),
+
+      onSuccess: async () => {
+        setSaveMessage(
+          "Session cancelled."
+        );
+
+        await queryClient
+          .invalidateQueries({
+            queryKey: [
+              "trainer-session",
+              sessionId,
+            ],
+          });
+
+        await queryClient
+          .invalidateQueries({
+            queryKey: [
+              "trainer-sessions",
+            ],
+          });
+
+        await queryClient
+          .invalidateQueries({
+            queryKey: [
+              "trainer-today",
+            ],
+          });
       },
     });
 
@@ -365,6 +453,13 @@ export default function TrainerSessionDetailPage() {
             ],
           });
 
+        await queryClient
+          .invalidateQueries({
+            queryKey: [
+              "trainer-today",
+            ],
+          });
+
         navigate(
           "/trainer/sessions"
         );
@@ -388,8 +483,7 @@ export default function TrainerSessionDetailPage() {
     return (
       <div className="rounded-2xl border border-red-200 bg-red-50 p-5">
         <p className="font-semibold text-red-700">
-          We couldn&apos;t
-          load this session.
+          We couldn&apos;t load this session.
         </p>
 
         {sessionQuery.error instanceof
@@ -408,11 +502,34 @@ export default function TrainerSessionDetailPage() {
   const session =
     sessionQuery.data.session;
 
+  const isScheduled =
+    session.status ===
+    "Scheduled";
+
+  const isLive =
+    session.status ===
+    "Live";
+
+  const isCompleted =
+    session.status ===
+    "Completed";
+
+  const isCancelled =
+    session.status ===
+    "Cancelled";
+
   const isReadOnly =
-    session.status ===
-      "Completed" ||
-    session.status ===
-      "Cancelled";
+    isCompleted ||
+    isCancelled;
+
+  const canEditAttendance =
+    isLive;
+
+  const anyMutationPending =
+    saveMutation.isPending ||
+    startMutation.isPending ||
+    cancelMutation.isPending ||
+    completeMutation.isPending;
 
   return (
     <div>
@@ -455,7 +572,18 @@ export default function TrainerSessionDetailPage() {
             </p>
           </div>
 
-          <span className="self-start rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700">
+          <span
+            className={[
+              "self-start rounded-full px-3 py-1.5 text-xs font-semibold",
+              isLive
+                ? "bg-green-50 text-green-700"
+                : isCancelled
+                  ? "bg-red-50 text-red-700"
+                  : isCompleted
+                    ? "bg-blue-50 text-blue-700"
+                    : "bg-slate-100 text-slate-700",
+            ].join(" ")}
+          >
             {
               session.status
             }
@@ -513,6 +641,14 @@ export default function TrainerSessionDetailPage() {
           >
             Open Meeting
           </a>
+        )}
+
+        {session.notes && (
+          <div className="mt-5 rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+            {
+              session.notes
+            }
+          </div>
         )}
       </div>
 
@@ -589,18 +725,18 @@ export default function TrainerSessionDetailPage() {
           </h2>
 
           <p className="mt-1 text-sm text-slate-500">
-            Mark attendance for
-            each enrolled member.
+            {isScheduled
+              ? "Start the session before recording attendance."
+              : isLive
+                ? "Mark attendance for each enrolled member."
+                : "Attendance for this session."}
           </p>
         </div>
 
         {session.participants.length ===
           0 && (
           <div className="mt-5 rounded-xl bg-slate-50 p-5 text-center text-sm text-slate-500">
-            No active
-            participants are
-            enrolled in this
-            cohort.
+            No participants are enrolled for this session.
           </div>
         )}
 
@@ -658,9 +794,13 @@ export default function TrainerSessionDetailPage() {
                           state.status ===
                           "Present"
                         }
+                        disabled={
+                          !canEditAttendance ||
+                          anyMutationPending
+                        }
                         onClick={() => {
                           if (
-                            isReadOnly
+                            !canEditAttendance
                           ) {
                             return;
                           }
@@ -694,9 +834,13 @@ export default function TrainerSessionDetailPage() {
                           state.status ===
                           "Partial"
                         }
+                        disabled={
+                          !canEditAttendance ||
+                          anyMutationPending
+                        }
                         onClick={() => {
                           if (
-                            isReadOnly
+                            !canEditAttendance
                           ) {
                             return;
                           }
@@ -730,9 +874,13 @@ export default function TrainerSessionDetailPage() {
                           state.status ===
                           "Absent"
                         }
+                        disabled={
+                          !canEditAttendance ||
+                          anyMutationPending
+                        }
                         onClick={() => {
                           if (
-                            isReadOnly
+                            !canEditAttendance
                           ) {
                             return;
                           }
@@ -768,7 +916,8 @@ export default function TrainerSessionDetailPage() {
                       state.notes
                     }
                     disabled={
-                      isReadOnly
+                      !canEditAttendance ||
+                      anyMutationPending
                     }
                     onChange={(
                       event
@@ -819,6 +968,28 @@ export default function TrainerSessionDetailPage() {
         </div>
       )}
 
+      {startMutation.isError && (
+        <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {startMutation
+            .error instanceof
+          Error
+            ? startMutation
+                .error.message
+            : "Session could not be started."}
+        </div>
+      )}
+
+      {cancelMutation.isError && (
+        <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {cancelMutation
+            .error instanceof
+          Error
+            ? cancelMutation
+                .error.message
+            : "Session could not be cancelled."}
+        </div>
+      )}
+
       {completeMutation
         .isError && (
         <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -843,62 +1014,190 @@ export default function TrainerSessionDetailPage() {
 
       {!isReadOnly && (
         <div className="sticky bottom-16 mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-lg md:bottom-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-slate-500">
-              {unmarkedCount > 0
-                ? `${unmarkedCount} participant(s) still unmarked`
-                : "Attendance complete"}
-            </p>
+          {/* Scheduled */}
 
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <button
-                type="button"
-                disabled={
-                  saveMutation
-                    .isPending ||
-                  completeMutation
+          {isScheduled && (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-slate-500">
+                Start the session to begin recording attendance.
+              </p>
+
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  disabled={
+                    startMutation
+                      .isPending ||
+                    cancelMutation
+                      .isPending
+                  }
+                  onClick={() => {
+                    const confirmed =
+                      window.confirm(
+                        "Cancel this session?"
+                      );
+
+                    if (!confirmed) {
+                      return;
+                    }
+
+                    setSaveMessage(
+                      ""
+                    );
+
+                    cancelMutation
+                      .mutate();
+                  }}
+                  className="rounded-xl border border-red-300 bg-white px-5 py-3 font-semibold text-red-600 disabled:opacity-50"
+                >
+                  {cancelMutation
                     .isPending
-                }
-                onClick={() => {
-                  setSaveMessage(
-                    ""
-                  );
+                    ? "Cancelling..."
+                    : "Cancel Session"}
+                </button>
 
-                  saveMutation.mutate();
-                }}
-                className="rounded-xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700 disabled:opacity-50"
-              >
-                {saveMutation
-                  .isPending
-                  ? "Saving..."
-                  : "Save Attendance"}
-              </button>
+                <button
+                  type="button"
+                  disabled={
+                    startMutation
+                      .isPending ||
+                    cancelMutation
+                      .isPending
+                  }
+                  onClick={() => {
+                    setSaveMessage(
+                      ""
+                    );
 
-              <button
-                type="button"
-                disabled={
-                  completeMutation
-                    .isPending ||
-                  saveMutation
-                    .isPending ||
-                  unmarkedCount > 0
-                }
-                onClick={() => {
-                  setSaveMessage(
-                    ""
-                  );
-
-                  completeMutation.mutate();
-                }}
-                className="rounded-xl bg-[#2F80ED] px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {completeMutation
-                  .isPending
-                  ? "Completing..."
-                  : "Complete Session"}
-              </button>
+                    startMutation
+                      .mutate();
+                  }}
+                  className="rounded-xl bg-[#2F80ED] px-5 py-3 font-semibold text-white disabled:opacity-50"
+                >
+                  {startMutation
+                    .isPending
+                    ? "Starting..."
+                    : "Start Session"}
+                </button>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Live */}
+
+          {isLive && (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-slate-500">
+                {unmarkedCount > 0
+                  ? `${unmarkedCount} participant(s) still unmarked`
+                  : "Attendance complete"}
+              </p>
+
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  disabled={
+                    cancelMutation
+                      .isPending ||
+                    saveMutation
+                      .isPending ||
+                    completeMutation
+                      .isPending
+                  }
+                  onClick={() => {
+                    const confirmed =
+                      window.confirm(
+                        "Cancel this session?"
+                      );
+
+                    if (!confirmed) {
+                      return;
+                    }
+
+                    setSaveMessage(
+                      ""
+                    );
+
+                    cancelMutation
+                      .mutate();
+                  }}
+                  className="rounded-xl border border-red-300 bg-white px-5 py-3 font-semibold text-red-600 disabled:opacity-50"
+                >
+                  {cancelMutation
+                    .isPending
+                    ? "Cancelling..."
+                    : "Cancel Session"}
+                </button>
+
+                <button
+                  type="button"
+                  disabled={
+                    saveMutation
+                      .isPending ||
+                    completeMutation
+                      .isPending ||
+                    cancelMutation
+                      .isPending
+                  }
+                  onClick={() => {
+                    setSaveMessage(
+                      ""
+                    );
+
+                    saveMutation
+                      .mutate();
+                  }}
+                  className="rounded-xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700 disabled:opacity-50"
+                >
+                  {saveMutation
+                    .isPending
+                    ? "Saving..."
+                    : "Save Attendance"}
+                </button>
+
+                <button
+                  type="button"
+                  disabled={
+                    completeMutation
+                      .isPending ||
+                    saveMutation
+                      .isPending ||
+                    cancelMutation
+                      .isPending ||
+                    unmarkedCount > 0
+                  }
+                  onClick={() => {
+                    setSaveMessage(
+                      ""
+                    );
+
+                    completeMutation
+                      .mutate();
+                  }}
+                  className="rounded-xl bg-[#2F80ED] px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {completeMutation
+                    .isPending
+                    ? "Completing..."
+                    : "Complete Session"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Read-only status */}
+
+      {isCompleted && (
+        <div className="mt-6 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-700">
+          This session has been completed. Attendance is read-only.
+        </div>
+      )}
+
+      {isCancelled && (
+        <div className="mt-6 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">
+          This session has been cancelled.
         </div>
       )}
     </div>

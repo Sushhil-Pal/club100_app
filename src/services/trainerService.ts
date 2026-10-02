@@ -1,6 +1,7 @@
 import {
   apiGet,
   apiPost,
+  apiPostForm,
 } from "./api";
 
 export type TrainerMemberSummary = {
@@ -582,5 +583,136 @@ export type TrainerTodayData = {
 export async function getTrainerToday(): Promise<TrainerTodayData> {
   return apiGet<TrainerTodayData>(
     "/api/method/club100_core.api.trainer.today"
+  );
+}
+
+export type TrainerProfile = {
+  id: string;
+
+  trainerName: string;
+
+  email: string | null;
+  mobile: string | null;
+
+  trainerType: string | null;
+  status: string;
+
+  photo: string | null;
+  bio: string | null;
+  certifications: string | null;
+
+  location: string | null;
+
+  onlineEligible: boolean;
+  offlineEligible: boolean;
+
+  maxOnlineCohortSize: number | null;
+
+  employee: string | null;
+  user: string | null;
+};
+
+type TrainerProfileResponse = {
+  trainer: TrainerProfile;
+};
+
+export async function getTrainerProfile(): Promise<TrainerProfile> {
+  const result =
+    await apiGet<TrainerProfileResponse>(
+      "/api/method/club100_core.api.trainer.profile"
+    );
+
+  return result.trainer;
+}
+
+export type UpdateTrainerProfileInput = {
+  mobile: string;
+  email: string;
+  bio: string;
+  certifications: string;
+  location: string;
+};
+
+export type UpdateTrainerProfileResponse = {
+  success: boolean;
+  trainer: TrainerProfile;
+};
+
+export async function updateTrainerProfile(
+  input: UpdateTrainerProfileInput
+): Promise<UpdateTrainerProfileResponse> {
+  return apiPost<UpdateTrainerProfileResponse>(
+    "/api/method/club100_core.api.trainer.update_profile",
+    {
+      mobile:
+        input.mobile,
+
+      email:
+        input.email,
+
+      bio:
+        input.bio,
+
+      certifications:
+        input.certifications,
+
+      location:
+        input.location,
+    }
+  );
+}
+
+export type UploadTrainerProfilePhotoResponse = {
+  success: boolean;
+  photo: string;
+};
+
+export async function uploadTrainerProfilePhoto(
+  file: File
+): Promise<UploadTrainerProfilePhotoResponse> {
+  const formData =
+    new FormData();
+
+  formData.append(
+    "file",
+    file
+  );
+
+  return apiPostForm<UploadTrainerProfilePhotoResponse>(
+    "/api/method/club100_core.api.trainer.upload_profile_photo",
+    formData
+  );
+}
+
+export type TrainerSessionStatusResponse = {
+  success: boolean;
+
+  session: {
+    id: string;
+    status: string;
+  };
+};
+
+export async function startTrainerSession(
+  sessionId: string
+): Promise<TrainerSessionStatusResponse> {
+  return apiPost<TrainerSessionStatusResponse>(
+    "/api/method/club100_core.api.trainer.start_session",
+    {
+      session_id:
+        sessionId,
+    }
+  );
+}
+
+export async function cancelTrainerSession(
+  sessionId: string
+): Promise<TrainerSessionStatusResponse> {
+  return apiPost<TrainerSessionStatusResponse>(
+    "/api/method/club100_core.api.trainer.cancel_session",
+    {
+      session_id:
+        sessionId,
+    }
   );
 }

@@ -345,3 +345,225 @@ export async function getTrainerAssessments(
 
   return result.assessments;
 }
+
+export type TrainerSessionSummary = {
+  id: string;
+
+  cohort: {
+    id: string;
+    name: string;
+  };
+
+  program: {
+    id: string;
+    name: string;
+  };
+
+  sessionDate: string;
+  startTime: string | null;
+  endTime: string | null;
+
+  deliveryMode: string;
+  status: string;
+
+  meetingProvider: string | null;
+  meetingUrl: string | null;
+
+  attendanceSynced: boolean;
+};
+
+type TrainerSessionsResponse = {
+  sessions: TrainerSessionSummary[];
+};
+
+export async function getTrainerSessions(
+  status = ""
+): Promise<TrainerSessionSummary[]> {
+  const params =
+    new URLSearchParams();
+
+  if (status) {
+    params.set(
+      "status",
+      status
+    );
+  }
+
+  const result =
+    await apiGet<
+      TrainerSessionsResponse
+    >(
+      `/api/method/club100_core.api.trainer.sessions?${params.toString()}`
+    );
+
+  return result.sessions;
+}
+
+export type TrainerSessionDetail = {
+  session: {
+    id: string;
+
+    cohort: {
+      id: string;
+      name: string;
+    };
+
+    program: {
+      id: string;
+      name: string;
+    };
+
+    sessionDate: string;
+    startTime: string | null;
+    endTime: string | null;
+
+    deliveryMode: string;
+    status: string;
+
+    meetingProvider: string | null;
+    meetingUrl: string | null;
+
+    notes: string | null;
+
+    attendanceSynced: boolean;
+
+    participants: {
+      enrollmentId: string;
+
+      member: {
+        id: string;
+        fullName: string;
+        mobile: string | null;
+        email: string | null;
+      };
+
+      attendance: {
+        id: string;
+        status: string;
+        mode: string;
+        source: string;
+        minutesAttended: number | null;
+        notes: string | null;
+      } | null;
+    }[];
+  };
+};
+
+export async function getTrainerSessionDetail(
+  sessionId: string
+): Promise<TrainerSessionDetail> {
+  const params =
+    new URLSearchParams();
+
+  params.set(
+    "session_id",
+    sessionId
+  );
+
+  return apiGet<TrainerSessionDetail>(
+    `/api/method/club100_core.api.trainer.session_detail?${params.toString()}`
+  );
+}
+
+export type SaveSessionAttendanceInput = {
+  memberId: string;
+  status:
+    | "Present"
+    | "Partial"
+    | "Absent";
+
+  notes?: string;
+};
+
+export async function saveTrainerSessionAttendance(
+  sessionId: string,
+  attendance: SaveSessionAttendanceInput[]
+): Promise<{
+  success: boolean;
+  saved: number;
+}> {
+  return apiPost(
+    "/api/method/club100_core.api.trainer.save_session_attendance",
+    {
+      session_id:
+        sessionId,
+
+      attendance,
+    }
+  );
+}
+
+export async function completeTrainerSession(
+  sessionId: string
+): Promise<{
+  success: boolean;
+
+  session: {
+    id: string;
+    status: string;
+  };
+}> {
+  return apiPost(
+    "/api/method/club100_core.api.trainer.complete_session",
+    {
+      session_id:
+        sessionId,
+    }
+  );
+}
+
+export type TrainerTodayData = {
+  date: string;
+
+  summary: {
+    sessions: number;
+    scheduled: number;
+    live: number;
+    completed: number;
+    draftAssessments: number;
+  };
+
+  sessions: {
+    id: string;
+
+    cohort: {
+      id: string;
+      name: string;
+    };
+
+    program: {
+      id: string;
+      name: string;
+    };
+
+    sessionDate: string;
+    startTime: string | null;
+    endTime: string | null;
+
+    deliveryMode: string;
+    status: string;
+
+    meetingProvider: string | null;
+    meetingUrl: string | null;
+  }[];
+
+  draftAssessments: {
+    id: string;
+
+    assessmentType: string;
+    assessmentDate: string | null;
+    modified: string;
+
+    member: {
+      id: string;
+      fullName: string;
+      mobile: string | null;
+    };
+  }[];
+};
+
+export async function getTrainerToday(): Promise<TrainerTodayData> {
+  return apiGet<TrainerTodayData>(
+    "/api/method/club100_core.api.trainer.today"
+  );
+}

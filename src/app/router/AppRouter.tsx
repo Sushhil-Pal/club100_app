@@ -38,6 +38,7 @@ import TrainerMemberDetailPage from "../../pages/trainer/TrainerMemberDetailPage
 import TrainerStartAssessmentPage from "../../pages/trainer/TrainerStartAssessmentPage";
 import TrainerAssessmentPage from "../../pages/trainer/TrainerAssessmentPage";
 import TrainerAssessmentResultPage from "../../pages/trainer/TrainerAssessmentResultPage";
+import TrainerSessionDetailPage from "../../pages/trainer/TrainerSessionDetailPage";
 
 export default function AppRouter() {
   return (
@@ -217,7 +218,15 @@ export default function AppRouter() {
                     <TrainerAssessmentResultPage />
                 }
                 />
+
+            <Route
+                path="/trainer/session/:sessionId"
+                element={
+                    <TrainerSessionDetailPage />
+                }
+                />
           </Route>
+
           
         </Route>
 

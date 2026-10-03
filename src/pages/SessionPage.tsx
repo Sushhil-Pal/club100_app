@@ -484,17 +484,23 @@ export default function SessionPage() {
                   </p>
                 )}
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    navigate(
-                      `/feedback/${session.id}`
-                    )
-                  }
-                  className="mt-6 rounded-xl bg-[#2F80ED] px-5 py-3 font-semibold text-white transition hover:bg-[#1F6FD1]"
-                >
-                  Give Session Feedback
-                </button>
+                {session.feedback.submitted ? (
+                  <div className="mt-6 inline-flex items-center rounded-xl bg-green-500/10 px-4 py-3 text-sm font-semibold text-green-300 ring-1 ring-green-500/20">
+                    ✓ Feedback Submitted
+                  </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate(
+                            `/feedback/${session.id}`
+                          )
+                        }
+                        className="mt-6 rounded-xl bg-[#2F80ED] px-5 py-3 font-semibold text-white transition hover:bg-[#1F6FD1]"
+                      >
+                        Give Session Feedback
+                      </button>
+                    )}
               </div>
             )}
 

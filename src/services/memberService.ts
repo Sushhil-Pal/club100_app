@@ -392,6 +392,13 @@ export type MemberSessionDetail = {
       notes:
         string | null;
     } | null;
+
+    feedback: {
+      submitted: boolean;
+
+      id:
+        string | null;
+    };
   };
 };
 

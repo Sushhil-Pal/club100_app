@@ -10,9 +10,12 @@ import DesktopSidebar from "../navigation/DesktopSidebar";
 
 import InstallAppBanner from "../pwa/InstallAppBanner";
 
+import PwaInstallationTracker from "../pwa/PwaInstallationTracker";
+
 export default function AppShell() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
+      <PwaInstallationTracker />  
       <MobileHeader />
 
       <div className="mx-auto flex max-w-7xl">

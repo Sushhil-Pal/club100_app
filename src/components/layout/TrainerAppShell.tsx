@@ -4,6 +4,7 @@ import {
 } from "react-router-dom";
 
 import InstallAppBanner from "../pwa/InstallAppBanner";
+import PwaInstallationTracker from "../pwa/PwaInstallationTracker";
 
 function navClass({
   isActive,
@@ -21,6 +22,7 @@ function navClass({
 export default function TrainerAppShell() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
+        <PwaInstallationTracker />
       {/* ============================================
           Trainer Header
       ============================================ */}

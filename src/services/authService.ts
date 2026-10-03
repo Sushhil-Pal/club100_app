@@ -142,3 +142,18 @@ export async function resetPassword(
     }
   );
 }
+
+export type MarkPwaInstalledResponse = {
+  success: boolean;
+
+  updated: (
+    | "member"
+    | "trainer"
+  )[];
+};
+
+export async function markPwaInstalled(): Promise<MarkPwaInstalledResponse> {
+  return apiPost<MarkPwaInstalledResponse>(
+    "/api/method/club100_core.api.auth.mark_pwa_installed"
+  );
+}

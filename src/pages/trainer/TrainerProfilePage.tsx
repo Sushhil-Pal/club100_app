@@ -11,6 +11,14 @@ import {
 } from "@tanstack/react-query";
 
 import {
+  useNavigate,
+} from "react-router-dom";
+
+import {
+  logout,
+} from "../../services/authService";
+
+import {
   getTrainerProfile,
   updateTrainerProfile,
   uploadTrainerProfilePhoto,
@@ -29,7 +37,10 @@ function ReadOnlyField({
   value,
 }: {
   label: string;
-  value: string | number | null;
+  value:
+    | string
+    | number
+    | null;
 }) {
   return (
     <div>
@@ -69,6 +80,9 @@ function EligibilityBadge({
 }
 
 export default function TrainerProfilePage() {
+  const navigate =
+    useNavigate();
+
   const queryClient =
     useQueryClient();
 
@@ -102,6 +116,10 @@ export default function TrainerProfilePage() {
     certifications: "",
     location: "",
   });
+
+  // ---------------------------------------------------------
+  // Profile
+  // ---------------------------------------------------------
 
   const profileQuery =
     useQuery({
@@ -142,6 +160,10 @@ export default function TrainerProfilePage() {
     profileQuery.data,
   ]);
 
+  // ---------------------------------------------------------
+  // Update profile
+  // ---------------------------------------------------------
+
   const updateMutation =
     useMutation({
       mutationFn: () =>
@@ -175,6 +197,10 @@ export default function TrainerProfilePage() {
           });
       },
     });
+
+  // ---------------------------------------------------------
+  // Profile photo
+  // ---------------------------------------------------------
 
   const photoMutation =
     useMutation({
@@ -213,6 +239,31 @@ export default function TrainerProfilePage() {
       },
     });
 
+  // ---------------------------------------------------------
+  // Logout
+  // ---------------------------------------------------------
+
+  const logoutMutation =
+    useMutation({
+      mutationFn:
+        logout,
+
+      onSuccess: () => {
+        queryClient.clear();
+
+        navigate(
+          "/login",
+          {
+            replace: true,
+          }
+        );
+      },
+    });
+
+  // ---------------------------------------------------------
+  // Loading
+  // ---------------------------------------------------------
+
   if (
     profileQuery.isLoading
   ) {
@@ -222,6 +273,10 @@ export default function TrainerProfilePage() {
       </div>
     );
   }
+
+  // ---------------------------------------------------------
+  // Error
+  // ---------------------------------------------------------
 
   if (
     profileQuery.isError ||
@@ -248,6 +303,10 @@ export default function TrainerProfilePage() {
 
   const trainer =
     profileQuery.data;
+
+  // ---------------------------------------------------------
+  // Cancel editing
+  // ---------------------------------------------------------
 
   function cancelEditing() {
     setForm({
@@ -277,8 +336,13 @@ export default function TrainerProfilePage() {
     );
   }
 
+  // ---------------------------------------------------------
+  // Photo selection
+  // ---------------------------------------------------------
+
   function handlePhotoSelected(
-    event: React.ChangeEvent<HTMLInputElement>
+    event:
+      React.ChangeEvent<HTMLInputElement>
   ) {
     const file =
       event.target.files?.[0];
@@ -336,7 +400,9 @@ export default function TrainerProfilePage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* --------------------------------------------------
+          Header
+      -------------------------------------------------- */}
 
       <div>
         <h1 className="text-2xl font-bold text-[#12395B]">
@@ -348,7 +414,9 @@ export default function TrainerProfilePage() {
         </p>
       </div>
 
-      {/* Main profile card */}
+      {/* --------------------------------------------------
+          Main profile card
+      -------------------------------------------------- */}
 
       <section className="rounded-2xl bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
@@ -459,13 +527,15 @@ export default function TrainerProfilePage() {
 
         {trainer.bio &&
           !isEditing && (
-            <p className="mt-6 whitespace-pre-line text-sm leading-6 text-slate-600">
-              {trainer.bio}
-            </p>
-          )}
+          <p className="mt-6 whitespace-pre-line text-sm leading-6 text-slate-600">
+            {trainer.bio}
+          </p>
+        )}
       </section>
 
-      {/* Photo upload error */}
+      {/* --------------------------------------------------
+          Photo upload error
+      -------------------------------------------------- */}
 
       {photoError && (
         <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -473,7 +543,9 @@ export default function TrainerProfilePage() {
         </div>
       )}
 
-      {/* Edit form */}
+      {/* --------------------------------------------------
+          Edit form
+      -------------------------------------------------- */}
 
       {isEditing && (
         <section className="rounded-2xl bg-white p-6 shadow-sm">
@@ -698,7 +770,9 @@ export default function TrainerProfilePage() {
         </section>
       )}
 
-      {/* Success message */}
+      {/* --------------------------------------------------
+          Success message
+      -------------------------------------------------- */}
 
       {successMessage && (
         <div className="rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
@@ -706,7 +780,9 @@ export default function TrainerProfilePage() {
         </div>
       )}
 
-      {/* Contact information */}
+      {/* --------------------------------------------------
+          Contact information
+      -------------------------------------------------- */}
 
       {!isEditing && (
         <section className="rounded-2xl bg-white p-6 shadow-sm">
@@ -739,7 +815,9 @@ export default function TrainerProfilePage() {
         </section>
       )}
 
-      {/* Certifications */}
+      {/* --------------------------------------------------
+          Certifications
+      -------------------------------------------------- */}
 
       {!isEditing && (
         <section className="rounded-2xl bg-white p-6 shadow-sm">
@@ -761,7 +839,9 @@ export default function TrainerProfilePage() {
         </section>
       )}
 
-      {/* Trainer configuration */}
+      {/* --------------------------------------------------
+          Trainer configuration
+      -------------------------------------------------- */}
 
       <section className="rounded-2xl bg-white p-6 shadow-sm">
         <h2 className="text-lg font-bold text-[#12395B]">
@@ -803,6 +883,45 @@ export default function TrainerProfilePage() {
             }
           />
         </div>
+      </section>
+
+      {/* --------------------------------------------------
+          Account
+      -------------------------------------------------- */}
+
+      <section className="rounded-2xl bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-bold text-[#12395B]">
+          Account
+        </h2>
+
+        <p className="mt-1 text-sm text-slate-500">
+          Sign out of your Club100 trainer account on this device.
+        </p>
+
+        {logoutMutation.isError && (
+          <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {logoutMutation.error instanceof
+            Error
+              ? logoutMutation.error
+                  .message
+              : "We couldn't log you out. Please try again."}
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={() =>
+            logoutMutation.mutate()
+          }
+          disabled={
+            logoutMutation.isPending
+          }
+          className="mt-5 w-full rounded-xl border border-red-200 px-4 py-3 font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {logoutMutation.isPending
+            ? "Logging out..."
+            : "Log Out"}
+        </button>
       </section>
     </div>
   );

@@ -227,3 +227,186 @@ export async function getMemberAssessmentResult(
     `/api/method/club100_core.api.member.assessment_result?${params.toString()}`
   );
 }
+
+export type MemberScheduleSession = {
+  id: string;
+
+  program: {
+    id: string;
+    name: string;
+  };
+
+  cohort: {
+    id: string;
+    name: string;
+    fitnessLevel:
+      string | null;
+  };
+
+  trainer: {
+    id: string;
+    name: string;
+  };
+
+  sessionDate: string;
+
+  startTime:
+    string | null;
+
+  endTime:
+    string | null;
+
+  deliveryMode: string;
+
+  status: string;
+
+  meetingProvider:
+    string | null;
+
+  meetingUrl:
+    string | null;
+
+  notes:
+    string | null;
+
+  attendance: {
+    status: string;
+    minutesAttended:
+      number | null;
+    notes:
+      string | null;
+  } | null;
+};
+
+export type MemberSchedule = {
+  upcoming:
+    MemberScheduleSession[];
+
+  past:
+    MemberScheduleSession[];
+};
+
+export async function getMemberSchedule(): Promise<MemberSchedule> {
+  return apiGet<MemberSchedule>(
+    "/api/method/club100_core.api.member.schedule"
+  );
+}
+
+export type MemberSessionDetail = {
+  session: {
+    id: string;
+
+    status:
+      | "Scheduled"
+      | "Live"
+      | "Completed"
+      | "Cancelled"
+      | string;
+
+    sessionDate: string;
+
+    startTime:
+      string | null;
+
+    endTime:
+      string | null;
+
+    deliveryMode:
+      string | null;
+
+    meetingProvider:
+      string | null;
+
+    meetingUrl:
+      string | null;
+
+    notes:
+      string | null;
+
+    workoutContent: {
+      id: string;
+
+      title: string;
+
+      format:
+        string | null;
+
+      fitnessLevel:
+        string | null;
+
+      durationMinutes:
+        number | null;
+
+      equipmentRequired:
+        string | null;
+
+      videoUrl:
+        string | null;
+
+      thumbnail:
+        string | null;
+
+      instructions:
+        string | null;
+    } | null;
+
+    program: {
+      id: string;
+      name: string;
+
+      description:
+        string | null;
+
+      sessionDurationMinutes:
+        number | null;
+    };
+
+    cohort: {
+      id: string;
+      name: string;
+
+      fitnessLevel:
+        string | null;
+    };
+
+    trainer: {
+      id: string;
+      name: string;
+
+      photo:
+        string | null;
+
+      bio:
+        string | null;
+    } | null;
+
+    attendance: {
+      status: string;
+
+      mode:
+        string | null;
+
+      minutesAttended:
+        number | null;
+
+      notes:
+        string | null;
+    } | null;
+  };
+};
+
+export async function getMemberSessionDetail(
+  sessionId: string
+): Promise<MemberSessionDetail> {
+  const params =
+    new URLSearchParams();
+
+  params.set(
+    "session_id",
+    sessionId
+  );
+
+  return apiGet<MemberSessionDetail>(
+    `/api/method/club100_core.api.member.session_detail?${params.toString()}`
+  );
+}

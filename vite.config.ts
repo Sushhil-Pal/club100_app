@@ -7,17 +7,58 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+
     VitePWA({
       registerType: "autoUpdate",
+
+      includeAssets: [
+        "favicon-16.png",
+        "favicon-32.png",
+        "icons/apple-touch-icon.png",
+      ],
+
       manifest: {
         name: "Club100",
         short_name: "Club100",
-        description: "Club100 Fitness Member App",
+
+        description:
+          "Club100 Fitness - Know Your Fitness. Improve It. Measure the Progress.",
+
         theme_color: "#12395B",
         background_color: "#FFFFFF",
+
         display: "standalone",
+        orientation: "portrait",
+
         start_url: "/",
-        icons: [],
+        scope: "/",
+
+        icons: [
+          {
+            src: "/icons/icon-192.png",
+            sizes: "192x192",
+            type: "image/png",
+            purpose: "any",
+          },
+          {
+            src: "/icons/icon-512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "any",
+          },
+          {
+            src: "/icons/icon-maskable-192.png",
+            sizes: "192x192",
+            type: "image/png",
+            purpose: "maskable",
+          },
+          {
+            src: "/icons/icon-maskable-512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable",
+          },
+        ],
       },
     }),
   ],

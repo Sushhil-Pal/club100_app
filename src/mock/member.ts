@@ -7,4 +7,6 @@ export const mockMember: Member = {
   mobile: "+91 99999 99999",
   memberType: "Individual",
   fitnessLevel: "Intermediate",
+  onboardingStatus: "Completed",
+  organization: null,
 };

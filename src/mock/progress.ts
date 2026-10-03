@@ -17,7 +17,22 @@ export const mockCategoryScores: CategoryScore[] = [
 ];
 
 export const mockAssessments: AssessmentSummary[] = [
-  { date: "20 Sep 2026", type: "Reassessment", score: 74 },
-  { date: "15 Aug 2026", type: "Reassessment", score: 68 },
-  { date: "12 Jul 2026", type: "Baseline", score: 62 },
+    {
+        id: "ASSESSMENT-003",
+        date: "20 Sep 2026",
+        type: "Reassessment",
+        score: 74,
+    },
+    {
+        id: "ASSESSMENT-002",
+        date: "15 Aug 2026",
+        type: "Reassessment",
+        score: 68,
+    },
+    {
+        id: "ASSESSMENT-001",
+        date: "12 Jul 2026",
+        type: "Baseline",
+        score: 62,
+    },
 ];

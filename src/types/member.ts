@@ -15,4 +15,5 @@ export type Member = {
     | "In Progress"
     | "Completed";
   onboardingCompletedOn?: string | null;
+  organization: string | null;
 };

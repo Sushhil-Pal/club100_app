@@ -3,6 +3,8 @@ import {
   Outlet,
 } from "react-router-dom";
 
+import InstallAppBanner from "../pwa/InstallAppBanner";
+
 function navClass({
   isActive,
 }: {
@@ -45,6 +47,8 @@ export default function TrainerAppShell() {
       ============================================ */}
 
       <main className="mx-auto min-h-screen max-w-6xl px-4 pb-24 pt-5 md:px-8 md:pb-8">
+        <InstallAppBanner />
+
         <Outlet />
       </main>
 
@@ -57,52 +61,77 @@ export default function TrainerAppShell() {
           <NavLink
             to="/trainer"
             end
-            className={navClass}
+            className={
+              navClass
+            }
           >
             <span className="text-lg">
               ◉
             </span>
-            <span>Today</span>
+
+            <span>
+              Today
+            </span>
           </NavLink>
 
           <NavLink
             to="/trainer/members"
-            className={navClass}
+            className={
+              navClass
+            }
           >
             <span className="text-lg">
               ◎
             </span>
-            <span>Members</span>
+
+            <span>
+              Members
+            </span>
           </NavLink>
 
           <NavLink
             to="/trainer/assessments"
-            className={navClass}
+            className={
+              navClass
+            }
           >
             <span className="text-lg">
               ◫
             </span>
-            <span>Assessments</span>
+
+            <span>
+              Assessments
+            </span>
           </NavLink>
 
           <NavLink
             to="/trainer/sessions"
-            className={navClass}
+            className={
+              navClass
+            }
           >
             <span className="text-lg">
               ◩
             </span>
-            <span>Sessions</span>
+
+            <span>
+              Sessions
+            </span>
           </NavLink>
 
           <NavLink
             to="/trainer/profile"
-            className={navClass}
+            className={
+              navClass
+            }
           >
             <span className="text-lg">
               ◯
             </span>
-            <span>Profile</span>
+
+            <span>
+              Profile
+            </span>
           </NavLink>
         </div>
       </nav>
@@ -116,7 +145,9 @@ export default function TrainerAppShell() {
           <NavLink
             to="/trainer"
             end
-            className={({ isActive }) =>
+            className={({
+              isActive,
+            }) =>
               [
                 "block rounded-xl px-4 py-3 text-sm font-medium",
                 isActive
@@ -130,7 +161,9 @@ export default function TrainerAppShell() {
 
           <NavLink
             to="/trainer/members"
-            className={({ isActive }) =>
+            className={({
+              isActive,
+            }) =>
               [
                 "block rounded-xl px-4 py-3 text-sm font-medium",
                 isActive
@@ -144,7 +177,9 @@ export default function TrainerAppShell() {
 
           <NavLink
             to="/trainer/assessments"
-            className={({ isActive }) =>
+            className={({
+              isActive,
+            }) =>
               [
                 "block rounded-xl px-4 py-3 text-sm font-medium",
                 isActive
@@ -158,7 +193,9 @@ export default function TrainerAppShell() {
 
           <NavLink
             to="/trainer/sessions"
-            className={({ isActive }) =>
+            className={({
+              isActive,
+            }) =>
               [
                 "block rounded-xl px-4 py-3 text-sm font-medium",
                 isActive
@@ -172,7 +209,9 @@ export default function TrainerAppShell() {
 
           <NavLink
             to="/trainer/profile"
-            className={({ isActive }) =>
+            className={({
+              isActive,
+            }) =>
               [
                 "block rounded-xl px-4 py-3 text-sm font-medium",
                 isActive

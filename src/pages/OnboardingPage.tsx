@@ -5,6 +5,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import {
+  Navigate,
   useNavigate,
 } from "react-router-dom";
 
@@ -14,10 +15,6 @@ import {
   completeOnboarding,
   getCurrentMember,
 } from "../services/memberService";
-
-import {
-  Navigate,
-} from "react-router-dom";
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
@@ -34,8 +31,8 @@ export default function OnboardingPage() {
   const [gender, setGender] =
     useState("");
 
-  const [fitnessGoal, setFitnessGoal] =
-    useState("");
+  const [fitnessGoals, setFitnessGoals] =
+    useState<string[]>([]);
 
   const [
     currentFitnessLevel,
@@ -54,6 +51,34 @@ export default function OnboardingPage() {
 
   const [formError, setFormError] =
     useState("");
+
+  const fitnessGoalOptions = [
+    "Improve Strength",
+    "Improve Mobility",
+    "Improve Endurance",
+    "Weight Management",
+    "General Fitness",
+    "Healthy Aging",
+    "Sports Performance",
+    "Other",
+  ];
+
+  const toggleFitnessGoal = (
+    goal: string
+  ) => {
+    setFitnessGoals(
+      (current) =>
+        current.includes(goal)
+          ? current.filter(
+              (item) =>
+                item !== goal
+            )
+          : [
+              ...current,
+              goal,
+            ]
+    );
+  };
 
   const onboardingMutation = useMutation({
     mutationFn: completeOnboarding,
@@ -108,14 +133,14 @@ export default function OnboardingPage() {
   if (
     member.onboardingStatus ===
     "Completed"
-    ) {
+  ) {
     return (
-        <Navigate
+      <Navigate
         to="/dashboard"
         replace
-        />
+      />
     );
-    }
+  }
 
   const handleSubmit = (
     event: React.FormEvent
@@ -138,9 +163,9 @@ export default function OnboardingPage() {
       return;
     }
 
-    if (!fitnessGoal) {
+    if (fitnessGoals.length === 0) {
       setFormError(
-        "Please select your fitness goal."
+        "Please select at least one fitness goal."
       );
       return;
     }
@@ -162,7 +187,7 @@ export default function OnboardingPage() {
     onboardingMutation.mutate({
       dateOfBirth,
       gender,
-      fitnessGoal,
+      fitnessGoals,
       currentFitnessLevel,
       preferredDeliveryMode,
       medicalNotes,
@@ -257,54 +282,56 @@ export default function OnboardingPage() {
 
           <div className="mt-5">
             <label className="text-sm font-medium text-slate-700">
-              Primary Fitness Goal
+              Primary Fitness Goals
             </label>
 
-            <select
-              value={fitnessGoal}
-              onChange={(event) =>
-                setFitnessGoal(
-                  event.target.value
-                )
-              }
-              className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-[#2F80ED]"
-            >
-              <option value="">
-                Select your goal
-              </option>
+            <p className="mt-1 text-xs text-slate-500">
+              Select all that apply.
+            </p>
 
-              <option value="Improve Strength">
-                Improve Strength
-              </option>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {fitnessGoalOptions.map(
+                (goal) => {
+                  const selected =
+                    fitnessGoals.includes(
+                      goal
+                    );
 
-              <option value="Improve Mobility">
-                Improve Mobility
-              </option>
+                  return (
+                    <button
+                      key={goal}
+                      type="button"
+                      onClick={() =>
+                        toggleFitnessGoal(
+                          goal
+                        )
+                      }
+                      className={`rounded-xl border px-4 py-3 text-left text-sm font-medium transition ${
+                        selected
+                          ? "border-[#2F80ED] bg-blue-50 text-[#12395B]"
+                          : "border-slate-300 bg-white text-slate-700 hover:border-[#2F80ED]"
+                      }`}
+                    >
+                      <span className="flex items-center gap-3">
+                        <span
+                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
+                            selected
+                              ? "border-[#2F80ED] bg-[#2F80ED] text-white"
+                              : "border-slate-300"
+                          }`}
+                        >
+                          {selected
+                            ? "✓"
+                            : ""}
+                        </span>
 
-              <option value="Improve Endurance">
-                Improve Endurance
-              </option>
-
-              <option value="Weight Management">
-                Weight Management
-              </option>
-
-              <option value="General Fitness">
-                General Fitness
-              </option>
-
-              <option value="Healthy Aging">
-                Healthy Aging
-              </option>
-
-              <option value="Sports Performance">
-                Sports Performance
-              </option>
-
-              <option value="Other">
-                Other
-              </option>
-            </select>
+                        {goal}
+                      </span>
+                    </button>
+                  );
+                }
+              )}
+            </div>
           </div>
 
           <div className="mt-5">
@@ -361,8 +388,8 @@ export default function OnboardingPage() {
                 Online
               </option>
 
-              <option value="Offline">
-                Offline
+              <option value="Onsite">
+                Onsite
               </option>
 
               <option value="Hybrid">

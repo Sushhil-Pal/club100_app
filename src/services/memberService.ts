@@ -37,7 +37,7 @@ export async function updateProfile(
 export type CompleteOnboardingInput = {
   dateOfBirth: string;
   gender: string;
-  fitnessGoal: string;
+  fitnessGoals: string[];
   currentFitnessLevel: string;
   preferredDeliveryMode: string;
   medicalNotes?: string;
@@ -54,7 +54,7 @@ export type CompleteOnboardingResponse = {
 
     fitnessLevel: string | null;
 
-    fitnessGoal: string | null;
+    fitnessGoals: string[];
 
     preferredDeliveryMode:
       string | null;
@@ -83,8 +83,8 @@ export async function completeOnboarding(
       gender:
         input.gender,
 
-      fitness_goal:
-        input.fitnessGoal,
+      fitness_goals:
+        input.fitnessGoals,
 
       current_fitness_level:
         input.currentFitnessLevel,

@@ -7,7 +7,7 @@ export type Member = {
   dateOfBirth?: string | null;
   gender?: string | null;
   fitnessLevel?: string | null;
-  fitnessGoal?: string | null;
+  fitnessGoals: string[];
   preferredDeliveryMode?: string | null;
   medicalNotes?: string | null;
   onboardingStatus:

@@ -9,7 +9,17 @@ export default defineConfig({
     tailwindcss(),
 
     VitePWA({
+      strategies: "injectManifest",
+
+      srcDir: "src",
+      filename: "sw.js",
+
       registerType: "autoUpdate",
+
+      devOptions: {
+        enabled: true,
+        type: "module",
+      },
 
       includeAssets: [
         "favicon-16.png",
@@ -58,6 +68,12 @@ export default defineConfig({
             type: "image/png",
             purpose: "maskable",
           },
+        ],
+      },
+
+      injectManifest: {
+        globPatterns: [
+          "**/*.{js,css,html,ico,png,svg,webmanifest}",
         ],
       },
     }),

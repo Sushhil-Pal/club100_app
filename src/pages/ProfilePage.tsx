@@ -20,6 +20,18 @@ import {
 
 import { logout } from "../services/authService";
 
+import {
+  disablePushNotifications,
+  enablePushNotifications,
+  getBrowserPushSubscription,
+  getNotificationPermission,
+  isPushSupported,
+} from "../services/pushNotificationService";
+
+import {
+  VAPID_PUBLIC_KEY,
+} from "../config/push";
+
 export default function ProfilePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -38,6 +50,33 @@ export default function ProfilePage() {
   const [mobile, setMobile] =
     useState("");
 
+  const [pushSupported] =
+    useState(
+      isPushSupported()
+    );
+
+  const [
+    notificationPermission,
+    setNotificationPermission,
+  ] = useState<NotificationPermission>(
+    getNotificationPermission()
+  );
+
+  const [
+    pushSubscribed,
+    setPushSubscribed,
+  ] = useState(false);
+
+  const [
+    pushLoading,
+    setPushLoading,
+  ] = useState(false);
+
+  const [
+    pushMessage,
+    setPushMessage,
+  ] = useState("");
+
   useEffect(() => {
     if (!memberQuery.data) return;
 
@@ -53,6 +92,34 @@ export default function ProfilePage() {
       memberQuery.data.mobile ?? ""
     );
   }, [memberQuery.data]);
+
+  useEffect(() => {
+    const loadPushStatus = async () => {
+      if (!pushSupported) {
+        return;
+      }
+
+      try {
+        const subscription =
+          await getBrowserPushSubscription();
+
+        setPushSubscribed(
+          Boolean(subscription)
+        );
+
+        setNotificationPermission(
+          getNotificationPermission()
+        );
+      } catch (error) {
+        console.error(
+          "Unable to load push status",
+          error
+        );
+      }
+    };
+
+    loadPushStatus();
+  }, [pushSupported]);
 
   const updateMutation = useMutation({
     mutationFn: updateProfile,
@@ -126,6 +193,92 @@ export default function ProfilePage() {
       mobile: mobile.trim(),
     });
   };
+
+  const handleEnableNotifications =
+    async () => {
+      setPushLoading(true);
+      setPushMessage("");
+
+      try {
+        if (!VAPID_PUBLIC_KEY) {
+          throw new Error(
+            "VAPID public key is not configured."
+          );
+        }
+
+        const result =
+          await enablePushNotifications(
+            VAPID_PUBLIC_KEY
+          );
+
+        setNotificationPermission(
+          result.permission
+        );
+
+        if (!result.success) {
+          setPushSubscribed(false);
+
+          if (
+            result.permission ===
+            "denied"
+          ) {
+            setPushMessage(
+              "Notifications are blocked in your browser settings."
+            );
+          } else {
+            setPushMessage(
+              "Notification permission was not granted."
+            );
+          }
+
+          return;
+        }
+
+        setPushSubscribed(true);
+
+        setPushMessage(
+          "Notifications are enabled on this device."
+        );
+      } catch (error) {
+        console.error(
+          "Unable to enable notifications",
+          error
+        );
+
+        setPushMessage(
+          "We couldn't enable notifications. Please try again."
+        );
+      } finally {
+        setPushLoading(false);
+      }
+    };
+
+  const handleDisableNotifications =
+    async () => {
+      setPushLoading(true);
+      setPushMessage("");
+
+      try {
+        await disablePushNotifications();
+
+        setPushSubscribed(false);
+
+        setPushMessage(
+          "Notifications are disabled on this device."
+        );
+      } catch (error) {
+        console.error(
+          "Unable to disable notifications",
+          error
+        );
+
+        setPushMessage(
+          "We couldn't disable notifications. Please try again."
+        );
+      } finally {
+        setPushLoading(false);
+      }
+    };
 
   return (
     <PageContainer>
@@ -289,10 +442,90 @@ export default function ProfilePage() {
             Preferences
           </h2>
 
-          <p className="mt-2 text-sm text-slate-500">
-            Notification preferences will
-            be available in a later version.
-          </p>
+          <div className="mt-5">
+            <h3 className="font-semibold text-slate-900">
+              Notifications
+            </h3>
+
+            <p className="mt-1 text-sm text-slate-600">
+              Get reminders for upcoming Club100 sessions,
+              schedule changes, assessments and other important
+              updates.
+            </p>
+
+            {!pushSupported ? (
+              <div className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
+                Push notifications are not supported on this
+                device or browser.
+              </div>
+            ) : (
+              <>
+                <div className="mt-4 flex items-center justify-between gap-4 rounded-xl bg-slate-50 p-4">
+                  <div>
+                    <p className="font-medium text-slate-900">
+                      Push Notifications
+                    </p>
+
+                    <p className="mt-1 text-sm text-slate-500">
+                      {pushSubscribed
+                        ? "Enabled on this device"
+                        : notificationPermission ===
+                          "denied"
+                        ? "Blocked by browser"
+                        : "Not enabled"}
+                    </p>
+                  </div>
+
+                  {pushSubscribed ? (
+                    <button
+                      type="button"
+                      disabled={pushLoading}
+                      onClick={
+                        handleDisableNotifications
+                      }
+                      className="shrink-0 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {pushLoading
+                        ? "Please wait..."
+                        : "Disable"}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={
+                        pushLoading ||
+                        notificationPermission ===
+                          "denied"
+                      }
+                      onClick={
+                        handleEnableNotifications
+                      }
+                      className="shrink-0 rounded-xl bg-[#2F80ED] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1F6FD1] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {pushLoading
+                        ? "Enabling..."
+                        : "Enable"}
+                    </button>
+                  )}
+                </div>
+
+                {pushMessage && (
+                  <div className="mt-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+                    {pushMessage}
+                  </div>
+                )}
+
+                {notificationPermission ===
+                  "denied" && (
+                  <p className="mt-3 text-xs leading-5 text-slate-500">
+                    Notifications are blocked in your browser
+                    or device settings. Enable them there,
+                    then return to Club100.
+                  </p>
+                )}
+              </>
+            )}
+          </div>
         </section>
 
         {logoutMutation.isError && (

@@ -1,13 +1,22 @@
-import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import {
+  useEffect,
+  useState,
+} from "react";
+import {
+  useMutation,
+} from "@tanstack/react-query";
 import {
   Link,
   useNavigate,
 } from "react-router-dom";
 
 import {
+  getRegistrationContext,
   register,
 } from "../services/authService";
+
+const REGISTRATION_TOKEN_STORAGE_KEY =
+  "club100_app_registration_token";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -27,94 +36,216 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] =
     useState("");
 
-  const [formError, setFormError] =
+  const [registrationToken, setRegistrationToken] =
     useState("");
 
+  const [handoffLoading, setHandoffLoading] =
+    useState(false);
+
+  const [handoffError, setHandoffError] =
+    useState("");
+
+  const [isPostPayment, setIsPostPayment] =
+    useState(false);
+
+
+  useEffect(() => {
+    const params =
+      new URLSearchParams(
+        window.location.search
+      );
+
+    const urlToken =
+      (params.get("token") || "").trim();
+
+    if (urlToken) {
+      sessionStorage.setItem(
+        REGISTRATION_TOKEN_STORAGE_KEY,
+        urlToken
+      );
+
+      window.history.replaceState(
+        {},
+        document.title,
+        "/register"
+      );
+    }
+
+    const token =
+      urlToken ||
+      (
+        sessionStorage.getItem(
+          REGISTRATION_TOKEN_STORAGE_KEY
+        ) || ""
+      ).trim();
+
+    if (!token) {
+      return;
+    }
+
+    setRegistrationToken(token);
+    setIsPostPayment(true);
+    setHandoffLoading(true);
+    setHandoffError("");
+
+    getRegistrationContext(token)
+      .then((context) => {
+        setFullName(
+          context.fullName || ""
+        );
+
+        setMobile(
+          context.mobile || ""
+        );
+
+        setEmail(
+          context.email || ""
+        );
+      })
+      .catch(() => {
+        sessionStorage.removeItem(
+          REGISTRATION_TOKEN_STORAGE_KEY
+        );
+
+        setRegistrationToken("");
+        setHandoffError(
+          "This account creation link is invalid or has expired. Please use a fresh link from Club100."
+        );
+      })
+      .finally(() => {
+        setHandoffLoading(false);
+      });
+  }, []);
+
+
   const registerMutation = useMutation({
-    mutationFn: register,
+    mutationFn: () =>
+      register({
+        fullName,
+        mobile,
+        email,
+        password,
+        registrationToken:
+          registrationToken || undefined,
+      }),
 
     onSuccess: (response) => {
-        if (
-            response.registrationType ===
-            "NewMember"
-        ) {
-            navigate(
-            "/onboarding",
-            {
-                replace: true,
-            }
-            );
+      sessionStorage.removeItem(
+        REGISTRATION_TOKEN_STORAGE_KEY
+      );
 
-            return;
-        }
-
+      if (
+        response.member &&
+        response.member.onboardingStatus !==
+          "Completed"
+      ) {
         navigate(
-            "/dashboard",
-            {
+          "/onboarding",
+          {
             replace: true,
-            }
+          }
         );
+
+        return;
+      }
+
+      navigate(
+        "/dashboard",
+        {
+          replace: true,
+        }
+      );
     },
   });
+
+
+  const passwordMismatch =
+    Boolean(confirmPassword) &&
+    password !== confirmPassword;
+
+  const canSubmit =
+    !handoffLoading &&
+    !handoffError &&
+    Boolean(fullName.trim()) &&
+    Boolean(mobile.trim()) &&
+    password.length >= 8 &&
+    password === confirmPassword &&
+    !registerMutation.isPending;
+
 
   const handleSubmit = (
     event: React.FormEvent
   ) => {
     event.preventDefault();
 
-    setFormError("");
-
-    if (!fullName.trim()) {
-      setFormError(
-        "Please enter your full name."
-      );
-
+    if (!canSubmit) {
       return;
     }
 
-    if (!mobile.trim()) {
-      setFormError(
-        "Please enter your mobile number."
-      );
-
-      return;
-    }
-
-    if (password.length < 8) {
-      setFormError(
-        "Password must be at least 8 characters long."
-      );
-
-      return;
-    }
-
-    if (
-      password !== confirmPassword
-    ) {
-      setFormError(
-        "Passwords do not match."
-      );
-
-      return;
-    }
-
-    registerMutation.mutate({
-      fullName:
-        fullName.trim(),
-
-      mobile:
-        mobile.trim(),
-
-      email:
-        email.trim(),
-
-      password,
-    });
+    registerMutation.mutate();
   };
+
+
+  if (handoffLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 px-4 py-8">
+        <div className="mx-auto flex min-h-[80vh] max-w-md items-center">
+          <div className="w-full rounded-2xl bg-white p-6 text-center shadow-sm">
+            <div className="text-3xl font-bold text-[#12395B]">
+              Club
+              <span className="text-[#2F80ED]">
+                100
+              </span>
+            </div>
+
+            <p className="mt-5 text-slate-600">
+              Preparing your Club100 account...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+
+  if (handoffError) {
+    return (
+      <div className="min-h-screen bg-slate-50 px-4 py-8">
+        <div className="mx-auto flex min-h-[80vh] max-w-md items-center">
+          <div className="w-full rounded-2xl bg-white p-6 shadow-sm">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-[#12395B]">
+                Club
+                <span className="text-[#2F80ED]">
+                  100
+                </span>
+              </div>
+            </div>
+
+            <h1 className="mt-7 text-2xl font-bold text-slate-900">
+              Account link unavailable
+            </h1>
+
+            <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {handoffError}
+            </div>
+
+            <Link
+              to="/login"
+              className="mt-6 block w-full rounded-xl bg-[#2F80ED] px-4 py-3 text-center font-semibold text-white transition hover:bg-[#1F6FD1]"
+            >
+              Go to Sign In
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-8">
-      <div className="mx-auto flex min-h-[85vh] max-w-md items-center">
+      <div className="mx-auto flex min-h-[80vh] max-w-md items-center">
         <div className="w-full">
           <div className="text-center">
             <div className="text-3xl font-bold text-[#12395B]">
@@ -135,14 +266,22 @@ export default function RegisterPage() {
             className="mt-8 rounded-2xl bg-white p-6 shadow-sm"
           >
             <h1 className="text-2xl font-bold text-slate-900">
-              Create your account
+              {isPostPayment
+                ? "Create your Club100 account"
+                : "Create account"}
             </h1>
 
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              If you already have a Club100
-              membership, we&apos;ll connect
-              this account to it automatically.
+            <p className="mt-2 text-sm text-slate-500">
+              {isPostPayment
+                ? "Your membership is active. Set your password to continue to onboarding."
+                : "Create your Club100 account to get started."}
             </p>
+
+            {isPostPayment && (
+              <div className="mt-5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+                Your enrollment is already confirmed. We have prefilled your member details from Club100 ERP.
+              </div>
+            )}
 
             <div className="mt-6">
               <label className="text-sm font-medium text-slate-700">
@@ -157,9 +296,17 @@ export default function RegisterPage() {
                     event.target.value
                   )
                 }
+                readOnly={isPostPayment}
                 autoComplete="name"
-                placeholder="Enter your full name"
-                className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-[#2F80ED]"
+                placeholder="Enter full name"
+                className={
+                  "mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-[#2F80ED] " +
+                  (
+                    isPostPayment
+                      ? "bg-slate-50 text-slate-700"
+                      : "bg-white"
+                  )
+                }
               />
             </div>
 
@@ -176,18 +323,23 @@ export default function RegisterPage() {
                     event.target.value
                   )
                 }
+                readOnly={isPostPayment}
                 autoComplete="tel"
                 placeholder="Enter mobile number"
-                className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-[#2F80ED]"
+                className={
+                  "mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-[#2F80ED] " +
+                  (
+                    isPostPayment
+                      ? "bg-slate-50 text-slate-700"
+                      : "bg-white"
+                  )
+                }
               />
             </div>
 
             <div className="mt-5">
               <label className="text-sm font-medium text-slate-700">
                 Email
-                <span className="ml-1 font-normal text-slate-400">
-                  (optional)
-                </span>
               </label>
 
               <input
@@ -199,9 +351,15 @@ export default function RegisterPage() {
                   )
                 }
                 autoComplete="email"
-                placeholder="Enter email address"
+                placeholder="Enter email"
                 className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-[#2F80ED]"
               />
+
+              {isPostPayment && (
+                <p className="mt-2 text-xs text-slate-500">
+                  You can update your email before creating the account.
+                </p>
+              )}
             </div>
 
             <div className="mt-5">
@@ -237,31 +395,26 @@ export default function RegisterPage() {
                   )
                 }
                 autoComplete="new-password"
-                placeholder="Enter password again"
+                placeholder="Re-enter password"
                 className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-[#2F80ED]"
               />
-            </div>
 
-            {formError && (
-              <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {formError}
-              </div>
-            )}
+              {passwordMismatch && (
+                <p className="mt-2 text-xs font-medium text-red-600">
+                  Passwords do not match.
+                </p>
+              )}
+            </div>
 
             {registerMutation.isError && (
               <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                Registration could not be
-                completed. Please check your
-                details or sign in if you have
-                already registered.
+                We could not create your Club100 account. Please check your details or use a fresh account-creation link.
               </div>
             )}
 
             <button
               type="submit"
-              disabled={
-                registerMutation.isPending
-              }
+              disabled={!canSubmit}
               className="mt-6 w-full rounded-xl bg-[#2F80ED] px-4 py-3 font-semibold text-white transition hover:bg-[#1F6FD1] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {registerMutation.isPending
@@ -269,15 +422,17 @@ export default function RegisterPage() {
                 : "Create Account"}
             </button>
 
-            <p className="mt-6 text-center text-sm text-slate-500">
-              Already registered?{" "}
-              <Link
-                to="/login"
-                className="font-semibold text-[#2F80ED]"
-              >
-                Sign In
-              </Link>
-            </p>
+            {!isPostPayment && (
+              <p className="mt-6 text-center text-sm text-slate-500">
+                Already have an account?{" "}
+                <Link
+                  to="/login"
+                  className="font-semibold text-[#2F80ED]"
+                >
+                  Sign In
+                </Link>
+              </p>
+            )}
           </form>
         </div>
       </div>

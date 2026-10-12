@@ -46,6 +46,17 @@ export type RegisterInput = {
   mobile: string;
   email?: string;
   password: string;
+  registrationToken?: string;
+};
+
+export type RegistrationContext = {
+  success: boolean;
+  member: string;
+  fullName: string;
+  mobile: string;
+  email: string;
+  memberType: string;
+  onboardingStatus: string;
 };
 
 export type SessionStatus = {
@@ -75,6 +86,17 @@ export async function login(
   );
 }
 
+export async function getRegistrationContext(
+  registrationToken: string
+): Promise<RegistrationContext> {
+  return apiPost<RegistrationContext>(
+    "/api/method/club100_core.api.auth.registration_context",
+    {
+      registration_token: registrationToken,
+    }
+  );
+}
+
 export async function register(
   input: RegisterInput
 ): Promise<RegisterResponse> {
@@ -85,6 +107,8 @@ export async function register(
       mobile: input.mobile,
       email: input.email ?? "",
       password: input.password,
+      registration_token:
+        input.registrationToken ?? "",
     }
   );
 }

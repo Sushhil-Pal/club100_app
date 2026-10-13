@@ -76,6 +76,35 @@ function formatTime(
   );
 }
 
+function formatDateTime(
+  value: string | null | undefined
+) {
+  if (!value) {
+    return "—";
+  }
+
+  const date =
+    new Date(value);
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return value;
+  }
+
+  return date.toLocaleString(
+    undefined,
+    {
+      day: "numeric",
+      month: "short",
+      hour: "numeric",
+      minute: "2-digit",
+    }
+  );
+}
+
 function StatusBadge({
   status,
 }: {
@@ -250,6 +279,25 @@ export default function SessionPage() {
     session.status ===
     "Cancelled";
 
+  const isSelfGuided =
+    session.sessionType ===
+    "Self Guided";
+
+  const accessState =
+    session.contentAccess
+      ?.state ?? null;
+
+  const accessStatus =
+    isCancelled
+      ? "Cancelled"
+      : accessState ===
+        "Available"
+      ? "Available Now"
+      : accessState ===
+        "Expired"
+      ? "Access Ended"
+      : "Scheduled";
+
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       <div className="mx-auto min-h-screen max-w-5xl px-5 py-6">
@@ -293,7 +341,9 @@ export default function SessionPage() {
                 <div className="flex flex-wrap items-center gap-3">
                   <StatusBadge
                     status={
-                      session.status
+                      isSelfGuided
+                        ? accessStatus
+                        : session.status
                     }
                   />
 
@@ -312,15 +362,17 @@ export default function SessionPage() {
                 </h1>
 
                 <p className="mt-2 text-lg text-slate-300">
-                  {
-                    session.cohort
-                      .name
-                  }
+                  {isSelfGuided
+                    ? `${session.plan?.name ?? "Self"} · Self-Guided`
+                    : session.cohort
+                        ?.name ??
+                      "Club100 Session"}
                 </p>
               </div>
 
-              {session.cohort
-                .fitnessLevel && (
+              {!isSelfGuided &&
+                session.cohort
+                  ?.fitnessLevel && (
                 <span className="self-start rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-slate-300">
                   {
                     session.cohort
@@ -363,24 +415,94 @@ export default function SessionPage() {
 
               <div className="rounded-2xl bg-white/[0.06] p-5">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Trainer
+                  {isSelfGuided
+                    ? "Training Style"
+                    : "Trainer"}
                 </p>
 
                 <p className="mt-2 font-semibold text-slate-100">
-                  {
-                    session.trainer
-                      ?.name ??
-                    "Club100 Trainer"
-                  }
+                  {isSelfGuided
+                    ? "Self-Guided"
+                    : session.trainer
+                        ?.name ??
+                      "Club100 Trainer"}
                 </p>
               </div>
             </div>
+
+            {isSelfGuided &&
+              !isCancelled && (
+              <div
+                className={[
+                  "mt-8 rounded-2xl border p-5 text-center",
+                  accessState ===
+                  "Available"
+                    ? "border-green-400/20 bg-green-500/10"
+                    : accessState ===
+                      "Expired"
+                    ? "border-slate-500/20 bg-white/[0.04]"
+                    : "border-blue-400/20 bg-blue-500/10",
+                ].join(" ")}
+              >
+                {accessState ===
+                "Available" ? (
+                  <>
+                    <p className="text-sm font-semibold uppercase tracking-wide text-green-300">
+                      Workout available now
+                    </p>
+
+                    <h2 className="mt-2 text-2xl font-bold">
+                      Ready to train?
+                    </h2>
+
+                    <p className="mt-3 text-sm text-slate-300">
+                      Your guided workout video is available until {formatDateTime(
+                        session.contentAccess
+                          ?.availableUntil
+                      )}.
+                    </p>
+                  </>
+                ) : accessState ===
+                  "Expired" ? (
+                  <>
+                    <p className="font-semibold text-slate-200">
+                      Workout access window ended.
+                    </p>
+
+                    <p className="mt-2 text-sm text-slate-400">
+                      The guided video was available until {formatDateTime(
+                        session.contentAccess
+                          ?.availableUntil
+                      )}.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-semibold text-blue-200">
+                      Your guided workout is scheduled.
+                    </p>
+
+                    <p className="mt-2 text-sm text-slate-400">
+                      The workout video will unlock automatically at {formatDateTime(
+                        session.contentAccess
+                          ?.availableFrom
+                      )}.
+                    </p>
+
+                    <div className="mt-5 inline-flex items-center gap-2 rounded-xl bg-white/5 px-4 py-3 text-sm text-slate-300">
+                      <span className="h-2 w-2 rounded-full bg-slate-500" />
+                      Video locked until start time
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
 
             {/* -------------------------------------------------
                 Scheduled
             ------------------------------------------------- */}
 
-            {isScheduled && (
+            {!isSelfGuided && isScheduled && (
               <div className="mt-8 rounded-2xl border border-blue-400/20 bg-blue-500/10 p-5 text-center">
                 <p className="font-semibold text-blue-200">
                   Your session has not started yet.
@@ -402,7 +524,7 @@ export default function SessionPage() {
                 Live
             ------------------------------------------------- */}
 
-            {isLive && (
+            {!isSelfGuided && isLive && (
               <div className="mt-8 rounded-2xl border border-green-400/20 bg-green-500/10 p-5">
                 <div className="text-center">
                   <p className="text-sm font-semibold uppercase tracking-wide text-green-300">
@@ -441,7 +563,7 @@ export default function SessionPage() {
                 Completed
             ------------------------------------------------- */}
 
-            {isCompleted && (
+            {!isSelfGuided && isCompleted && (
               <div className="mt-8 rounded-2xl border border-blue-400/20 bg-blue-500/10 p-5">
                 <p className="text-sm font-semibold uppercase tracking-wide text-blue-300">
                   Session completed
@@ -638,15 +760,17 @@ export default function SessionPage() {
                       </div>
                     )}
 
-                    {/* Supporting workout video */}
+                    {/* Guided / supporting workout video */}
 
-                    {session.workoutContent
-                      .videoUrl && (
-                      <div className="mt-6 border-t border-white/10 pt-5">
-                        <p className="text-sm text-slate-400">
-                          Supporting workout video
-                        </p>
+                    <div className="mt-6 border-t border-white/10 pt-5">
+                      <p className="text-sm text-slate-400">
+                        {isSelfGuided
+                          ? "Guided workout video"
+                          : "Supporting workout video"}
+                      </p>
 
+                      {session.workoutContent
+                        .videoUrl ? (
                         <a
                           href={
                             session.workoutContent
@@ -654,12 +778,21 @@ export default function SessionPage() {
                           }
                           target="_blank"
                           rel="noreferrer"
-                          className="mt-3 inline-flex rounded-xl border border-[#2F80ED] px-4 py-3 text-sm font-semibold text-blue-300 transition hover:bg-blue-500/10"
+                          className="mt-3 inline-flex rounded-xl bg-[#2F80ED] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1F6FD1]"
                         >
-                          Open Workout Video
+                          {isSelfGuided
+                            ? "Start Guided Workout"
+                            : "Open Workout Video"}
                         </a>
-                      </div>
-                    )}
+                      ) : isSelfGuided ? (
+                        <div className="mt-3 rounded-xl bg-white/5 px-4 py-3 text-sm text-slate-400">
+                          {accessState ===
+                          "Expired"
+                            ? "The workout video is no longer available."
+                            : "The workout video will appear here at the scheduled start time."}
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
                 ) : (
                   <div className="mt-5 rounded-xl bg-white/5 p-5">
@@ -674,7 +807,9 @@ export default function SessionPage() {
 
               <section className="rounded-2xl border border-white/10 bg-white/[0.06] p-6">
                 <p className="text-xs font-semibold uppercase tracking-wide text-[#2F80ED]">
-                  Trainer Notes
+                  {isSelfGuided
+                    ? "Session Notes"
+                    : "Trainer Notes"}
                 </p>
 
                 {session.notes ? (
@@ -716,6 +851,7 @@ export default function SessionPage() {
             <aside className="space-y-6">
               {/* Trainer */}
 
+              {!isSelfGuided && (
               <section className="rounded-2xl border border-white/10 bg-white/[0.06] p-5">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Your Trainer
@@ -773,6 +909,7 @@ export default function SessionPage() {
                   />
                 )}
               </section>
+              )}
 
               {/* Session details */}
 
@@ -797,14 +934,19 @@ export default function SessionPage() {
 
                   <div>
                     <p className="text-slate-500">
-                      Cohort
+                      {isSelfGuided
+                        ? "Plan"
+                        : "Cohort"}
                     </p>
 
                     <p className="mt-1 font-medium text-slate-200">
-                      {
-                        session.cohort
-                          .name
-                      }
+                      {isSelfGuided
+                        ? session.plan
+                            ?.name ??
+                          "Self"
+                        : session.cohort
+                            ?.name ??
+                          "—"}
                     </p>
                   </div>
 
@@ -843,7 +985,7 @@ export default function SessionPage() {
 
               {/* Helpful note while live */}
 
-              {isLive && (
+              {!isSelfGuided && isLive && (
                 <section className="rounded-2xl border border-blue-400/20 bg-blue-500/10 p-5">
                   <p className="font-semibold text-blue-200">
                     Keep Club100 open

@@ -86,6 +86,33 @@ function formatTime(
   );
 }
 
+function formatAccessTime(
+  value: string | null | undefined
+) {
+  if (!value) {
+    return null;
+  }
+
+  const date =
+    new Date(value);
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return null;
+  }
+
+  return date.toLocaleTimeString(
+    undefined,
+    {
+      hour: "numeric",
+      minute: "2-digit",
+    }
+  );
+}
+
 function StatusBadge({
   status,
 }: {
@@ -94,7 +121,10 @@ function StatusBadge({
   let className =
     "bg-slate-100 text-slate-600";
 
-  if (status === "Live") {
+  if (
+    status === "Live" ||
+    status === "Available Now"
+  ) {
     className =
       "bg-green-50 text-green-700";
   } else if (
@@ -133,7 +163,30 @@ function SessionCard({
 
   isNext: boolean;
 }) {
+  const isSelfGuided =
+    session.sessionType ===
+    "Self Guided";
+
+  const accessState =
+    session.contentAccess
+      ?.state ?? null;
+
+  const displayStatus =
+    isSelfGuided
+      ? session.status ===
+        "Cancelled"
+        ? "Cancelled"
+        : accessState ===
+          "Available"
+        ? "Available Now"
+        : accessState ===
+          "Expired"
+        ? "Access Ended"
+        : "Scheduled"
+      : session.status;
+
   const canJoin =
+    !isSelfGuided &&
     isUpcoming &&
     !!session.meetingUrl &&
     (
@@ -142,6 +195,25 @@ function SessionCard({
       session.status ===
         "Live"
     );
+
+  const availableFrom =
+    formatAccessTime(
+      session.contentAccess
+        ?.availableFrom
+    );
+
+  const availableUntil =
+    formatAccessTime(
+      session.contentAccess
+        ?.availableUntil
+    );
+
+  const title =
+    isSelfGuided
+      ? session.workout
+          ?.title ||
+        `${session.program.name} Workout`
+      : session.program.name;
 
   return (
     <section className="rounded-2xl bg-white p-5 shadow-sm">
@@ -156,29 +228,30 @@ function SessionCard({
 
             <StatusBadge
               status={
-                session.status
+                displayStatus
               }
             />
 
             {isNext && (
               <span className="rounded-full bg-[#EAF4FC] px-3 py-1 text-xs font-semibold text-[#12395B]">
-                Next Session
+                {isSelfGuided
+                  ? "Next Workout"
+                  : "Next Session"}
               </span>
             )}
           </div>
 
           <h2 className="mt-3 text-xl font-bold text-[#12395B]">
-            {
-              session.program
-                .name
-            }
+            {title}
           </h2>
 
           <p className="mt-1 text-sm text-slate-500">
-            {
-              session.cohort
-                .name
-            }
+            {isSelfGuided
+              ? `${session.program.name} · Self-Guided`
+              : session.cohort
+                  ?.name ??
+                session.program
+                  .name}
           </p>
 
           <div className="mt-4 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
@@ -196,16 +269,24 @@ function SessionCard({
               )}
             </p>
 
-            <p>
-              <span className="text-slate-400">
-                Trainer:{" "}
-              </span>
+            {isSelfGuided ? (
+              <p>
+                <span className="text-slate-400">
+                  Training:{" "}
+                </span>
+                Self-Guided
+              </p>
+            ) : (
+              <p>
+                <span className="text-slate-400">
+                  Trainer:{" "}
+                </span>
 
-              {
-                session.trainer
-                  .name
-              }
-            </p>
+                {session.trainer
+                  ?.name ||
+                  "Club100 Trainer"}
+              </p>
+            )}
 
             <p>
               <span className="text-slate-400">
@@ -217,8 +298,23 @@ function SessionCard({
               }
             </p>
 
-            {session.cohort
-              .fitnessLevel && (
+            {isSelfGuided &&
+              session.workout
+                ?.format && (
+              <p>
+                <span className="text-slate-400">
+                  Workout:{" "}
+                </span>
+                {
+                  session.workout
+                    .format
+                }
+              </p>
+            )}
+
+            {!isSelfGuided &&
+              session.cohort
+                ?.fitnessLevel && (
               <p>
                 <span className="text-slate-400">
                   Level:{" "}
@@ -231,6 +327,24 @@ function SessionCard({
               </p>
             )}
           </div>
+
+          {isSelfGuided &&
+            accessState ===
+              "Available" &&
+            availableUntil && (
+            <div className="mt-4 rounded-xl bg-green-50 p-3 text-sm text-green-700">
+              Workout video available until {availableUntil}.
+            </div>
+          )}
+
+          {isSelfGuided &&
+            accessState ===
+              "Locked" &&
+            availableFrom && (
+            <div className="mt-4 rounded-xl bg-blue-50 p-3 text-sm text-[#12395B]">
+              Workout video available at {availableFrom}.
+            </div>
+          )}
 
           {!isUpcoming &&
             session.attendance && (
@@ -269,7 +383,29 @@ function SessionCard({
         </div>
 
         <div className="shrink-0 sm:min-w-40">
-          {canJoin ? (
+          {isSelfGuided ? (
+            <Link
+              to={`/session/${session.id}`}
+              className={[
+                "block w-full rounded-xl px-4 py-3 text-center text-sm font-semibold",
+                accessState ===
+                "Available"
+                  ? "bg-[#2F80ED] text-white transition hover:bg-[#1F6FD1]"
+                  : accessState ===
+                    "Expired"
+                  ? "border border-slate-300 text-slate-600"
+                  : "border border-[#2F80ED] text-[#2F80ED]",
+              ].join(" ")}
+            >
+              {accessState ===
+              "Available"
+                ? "Start Workout"
+                : accessState ===
+                  "Expired"
+                ? "View Details"
+                : "View Details"}
+            </Link>
+          ) : canJoin ? (
             <a
               href={
                 session.meetingUrl!
@@ -320,6 +456,9 @@ export default function SchedulePage() {
 
       queryFn:
         getMemberSchedule,
+
+      refetchInterval:
+        30000,
     });
 
   if (
@@ -375,22 +514,32 @@ export default function SchedulePage() {
       ? upcoming
       : past;
 
+  const nextUpcomingIndex =
+    activeTab === "upcoming"
+      ? sessions.findIndex(
+          (session) =>
+            !(
+              session.sessionType ===
+                "Self Guided" &&
+              session.contentAccess
+                ?.state ===
+                "Available"
+            )
+        )
+      : -1;
+
   return (
     <PageContainer>
       <div className="space-y-6">
-        {/* Header */}
-
         <div>
           <h1 className="text-3xl font-bold text-[#12395B] md:text-4xl">
             Schedule
           </h1>
 
           <p className="mt-2 text-slate-600">
-            View your Club100 sessions and attendance.
+            View your Club100 sessions and guided workouts.
           </p>
         </div>
-
-        {/* Tabs */}
 
         <div className="flex rounded-xl bg-slate-100 p-1">
           <button
@@ -443,8 +592,6 @@ export default function SchedulePage() {
           </button>
         </div>
 
-        {/* Empty state */}
-
         {sessions.length ===
         0 ? (
           <section className="rounded-2xl bg-white p-8 text-center shadow-sm">
@@ -458,7 +605,7 @@ export default function SchedulePage() {
             <p className="mt-2 text-sm text-slate-500">
               {activeTab ===
               "upcoming"
-                ? "Your upcoming Club100 sessions will appear here."
+                ? "Your upcoming Club100 sessions and guided workouts will appear here."
                 : "Your completed session history will appear here."}
             </p>
           </section>
@@ -483,7 +630,8 @@ export default function SchedulePage() {
                   isNext={
                     activeTab ===
                       "upcoming" &&
-                    index === 0
+                    index ===
+                      nextUpcomingIndex
                   }
                 />
               )

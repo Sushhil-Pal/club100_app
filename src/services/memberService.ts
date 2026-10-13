@@ -228,25 +228,59 @@ export async function getMemberAssessmentResult(
   );
 }
 
+export type MemberContentAccess = {
+  state:
+    | "Locked"
+    | "Available"
+    | "Expired"
+    | string;
+
+  availableFrom:
+    string | null;
+
+  availableUntil:
+    string | null;
+};
+
 export type MemberScheduleSession = {
   id: string;
+
+  sessionType:
+    | "Self Guided"
+    | "Trainer Led"
+    | string;
 
   program: {
     id: string;
     name: string;
   };
 
+  plan: {
+    id: string;
+    name: string;
+    code: string | null;
+  } | null;
+
   cohort: {
     id: string;
     name: string;
     fitnessLevel:
       string | null;
-  };
+  } | null;
 
   trainer: {
     id: string;
     name: string;
-  };
+  } | null;
+
+  workout: {
+    id: string;
+    title: string;
+    format: string | null;
+  } | null;
+
+  contentAccess:
+    MemberContentAccess | null;
 
   sessionDate: string;
 
@@ -296,6 +330,11 @@ export type MemberSessionDetail = {
   session: {
     id: string;
 
+    sessionType:
+      | "Self Guided"
+      | "Trainer Led"
+      | string;
+
     status:
       | "Scheduled"
       | "Live"
@@ -322,6 +361,9 @@ export type MemberSessionDetail = {
 
     notes:
       string | null;
+
+    contentAccess:
+      MemberContentAccess | null;
 
     workoutContent: {
       id: string;
@@ -361,13 +403,19 @@ export type MemberSessionDetail = {
         number | null;
     };
 
+    plan: {
+      id: string;
+      name: string;
+      code: string | null;
+    } | null;
+
     cohort: {
       id: string;
       name: string;
 
       fitnessLevel:
         string | null;
-    };
+    } | null;
 
     trainer: {
       id: string;

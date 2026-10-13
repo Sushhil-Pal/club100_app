@@ -132,6 +132,9 @@ export default function DashboardPage() {
 
       queryFn:
         getMemberSchedule,
+
+      refetchInterval:
+        30000,
     });
 
   const progressQuery =
@@ -282,29 +285,44 @@ export default function DashboardPage() {
         </div>
 
         {/* --------------------------------------------------
-            Next Session
+            Next Session / Guided Workout
         -------------------------------------------------- */}
 
-        {!isSelfPlan && (
-          nextSession ? (
+        {nextSession ? (
           <section className="rounded-2xl bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between gap-4">
               <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-                Next Session
+                {isSelfPlan
+                  ? "Next Workout"
+                  : "Next Session"}
               </p>
 
-              {nextSession.status ===
-              "Live" ? (
+              {isSelfPlan ? (
+                <span
+                  className={[
+                    "rounded-full px-3 py-1 text-xs font-semibold",
+                    nextSession.contentAccess
+                      ?.state ===
+                    "Available"
+                      ? "bg-green-50 text-green-700"
+                      : "bg-blue-50 text-[#2F80ED]",
+                  ].join(" ")}
+                >
+                  {nextSession.contentAccess
+                    ?.state ===
+                  "Available"
+                    ? "Available Now"
+                    : "Scheduled"}
+                </span>
+              ) : nextSession.status ===
+                "Live" ? (
                 <span className="inline-flex items-center rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
                   <span className="mr-2 h-2 w-2 rounded-full bg-green-500" />
-
                   Live Now
                 </span>
               ) : (
                 <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-[#2F80ED]">
-                  {
-                    nextSession.status
-                  }
+                  {nextSession.status}
                 </span>
               )}
             </div>
@@ -312,17 +330,22 @@ export default function DashboardPage() {
             <div className="mt-4 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h2 className="text-2xl font-semibold text-slate-900">
-                  {
-                    nextSession.program
-                      .name
-                  }
+                  {isSelfPlan
+                    ? nextSession.workout
+                        ?.title ||
+                      nextSession.program
+                        .name
+                    : nextSession.program
+                        .name}
                 </h2>
 
                 <p className="mt-1 text-slate-600">
-                  {
-                    nextSession.cohort
-                      .name
-                  }
+                  {isSelfPlan
+                    ? `${nextSession.program.name} · Self-Guided`
+                    : nextSession.cohort
+                        ?.name ??
+                      nextSession.program
+                        .name}
                 </p>
 
                 <div className="mt-4 space-y-1 text-sm text-slate-500">
@@ -343,30 +366,28 @@ export default function DashboardPage() {
                   </p>
 
                   <p>
-                    Trainer:{" "}
-                    {
-                      nextSession.trainer
-                        .name ||
-                      "Club100 Trainer"
-                    }
+                    {isSelfPlan
+                      ? "Training: Self-Guided"
+                      : `Trainer: ${
+                          nextSession.trainer
+                            ?.name ||
+                          "Club100 Trainer"
+                        }`}
                   </p>
 
                   <p>
                     Mode:{" "}
-                    {
-                      nextSession.deliveryMode
-                    }
+                    {nextSession.deliveryMode}
                   </p>
                 </div>
               </div>
 
-              {nextSession.cohort
-                .fitnessLevel && (
+              {!isSelfPlan &&
+                nextSession.cohort
+                  ?.fitnessLevel && (
                 <div className="self-start rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-[#2F80ED]">
-                  {
-                    nextSession.cohort
-                      .fitnessLevel
-                  }
+                  {nextSession.cohort
+                    .fitnessLevel}
                 </div>
               )}
             </div>
@@ -375,14 +396,26 @@ export default function DashboardPage() {
               to={`/session/${nextSession.id}`}
               className={[
                 "mt-6 block w-full rounded-xl px-4 py-3 text-center font-semibold text-white transition",
-                nextSession.status ===
-                "Live"
+                isSelfPlan &&
+                nextSession.contentAccess
+                  ?.state ===
+                  "Available"
+                  ? "bg-green-600 hover:bg-green-700"
+                  : !isSelfPlan &&
+                    nextSession.status ===
+                    "Live"
                   ? "bg-green-600 hover:bg-green-700"
                   : "bg-[#2F80ED] hover:bg-[#1F6FD1]",
               ].join(" ")}
             >
-              {nextSession.status ===
-              "Live"
+              {isSelfPlan
+                ? nextSession.contentAccess
+                    ?.state ===
+                  "Available"
+                  ? "Start Workout"
+                  : "View Workout"
+                : nextSession.status ===
+                  "Live"
                 ? "Join Live Session"
                 : "View Session"}
             </Link>
@@ -397,15 +430,21 @@ export default function DashboardPage() {
         ) : (
           <section className="rounded-2xl bg-white p-6 shadow-sm">
             <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-              Next Session
+              {isSelfPlan
+                ? "Next Workout"
+                : "Next Session"}
             </p>
 
             <h2 className="mt-3 text-xl font-semibold text-slate-900">
-              No upcoming sessions
+              {isSelfPlan
+                ? "No guided workout scheduled"
+                : "No upcoming sessions"}
             </h2>
 
             <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">
-              Your upcoming Club100 sessions will appear here once they are scheduled for your cohort.
+              {isSelfPlan
+                ? "Your scheduled guided workouts will appear here when they are published."
+                : "Your upcoming Club100 sessions will appear here once they are scheduled for your cohort."}
             </p>
 
             <Link
@@ -415,7 +454,6 @@ export default function DashboardPage() {
               View Schedule →
             </Link>
           </section>
-        )
         )}
 
         {/* --------------------------------------------------
@@ -445,12 +483,12 @@ export default function DashboardPage() {
                   </span>
 
                   <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-600">
-                    Train Anytime
+                    Guided Workouts
                   </span>
                 </div>
 
                 <p className="mt-5 text-sm leading-6 text-slate-500">
-                  Train anytime, at your own pace, with guided Club100 workouts, fitness assessment and progress tracking.
+                  Follow scheduled Club100 workouts independently, with guided video sessions, fitness assessment and progress tracking.
                 </p>
 
                 <Link
@@ -856,20 +894,6 @@ export default function DashboardPage() {
           </p>
 
           <div className="grid gap-3 sm:grid-cols-3">
-            {isSelfPlan ? (
-              <Link
-                to="/assessment"
-                className="rounded-2xl bg-white p-5 shadow-sm transition hover:shadow-md"
-              >
-                <p className="font-semibold text-[#12395B]">
-                  Assessment
-                </p>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  Fitness score and reassessments
-                </p>
-              </Link>
-            ) : (
             <Link
               to="/schedule"
               className="rounded-2xl bg-white p-5 shadow-sm transition hover:shadow-md"
@@ -879,10 +903,11 @@ export default function DashboardPage() {
               </p>
 
               <p className="mt-1 text-sm text-slate-500">
-                Upcoming and past sessions
+                {isSelfPlan
+                  ? "Guided workouts and access times"
+                  : "Upcoming and past sessions"}
               </p>
             </Link>
-            )}
 
             <Link
               to="/progress"

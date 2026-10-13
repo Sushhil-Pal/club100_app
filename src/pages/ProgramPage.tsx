@@ -180,6 +180,16 @@ function SessionStatusBadge({
     "bg-blue-50 text-[#2F80ED]";
 
   if (
+    status === "Available Now"
+  ) {
+    className =
+      "bg-green-50 text-green-700";
+  } else if (
+    status === "Access Ended"
+  ) {
+    className =
+      "bg-slate-100 text-slate-600";
+  } else if (
     status === "Completed"
   ) {
     className =
@@ -216,6 +226,26 @@ function WeekSessionRow({
   session:
     MemberScheduleSession;
 }) {
+  const isSelfGuided =
+    session.sessionType ===
+    "Self Guided";
+
+  const displayStatus =
+    isSelfGuided
+      ? session.status ===
+        "Cancelled"
+        ? "Cancelled"
+        : session.contentAccess
+            ?.state ===
+          "Available"
+        ? "Available Now"
+        : session.contentAccess
+            ?.state ===
+          "Expired"
+        ? "Access Ended"
+        : "Scheduled"
+      : session.status;
+
   return (
     <Link
       to={`/session/${session.id}`}
@@ -229,10 +259,13 @@ function WeekSessionRow({
         </p>
 
         <p className="mt-1 font-semibold text-slate-800">
-          {
-            session.program
-              .name
-          }
+          {isSelfGuided
+            ? session.workout
+                ?.title ||
+              session.program
+                .name
+            : session.program
+                .name}
         </p>
 
         <p className="mt-1 text-sm text-slate-500">
@@ -244,15 +277,15 @@ function WeekSessionRow({
             session.endTime
           )}
           {" • "}
-          {
-            session.deliveryMode
-          }
+          {isSelfGuided
+            ? "Self-Guided"
+            : session.deliveryMode}
         </p>
       </div>
 
       <SessionStatusBadge
         status={
-          session.status
+          displayStatus
         }
       />
     </Link>
@@ -282,6 +315,9 @@ export default function ProgramPage() {
 
       queryFn:
         getMemberSchedule,
+
+      refetchInterval:
+        30000,
     });
 
   const assessmentContextQuery =
@@ -482,7 +518,7 @@ export default function ProgramPage() {
                 </span>
 
                 <span className="rounded-full bg-white/15 px-3 py-1 text-sm font-semibold">
-                  Train Anytime
+                  Guided Workouts
                 </span>
               </div>
 
@@ -504,7 +540,7 @@ export default function ProgramPage() {
 
             <div className="p-6">
               <p className="text-sm leading-7 text-slate-600">
-                Your Self plan gives you the flexibility to train anytime, at your own pace, with guided Club100 workouts, fitness assessment and progress tracking.
+                Your Self plan gives you scheduled guided Club100 workouts that you complete independently, together with fitness assessment and progress tracking.
               </p>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -524,7 +560,7 @@ export default function ProgramPage() {
                   </p>
 
                   <p className="mt-1 font-semibold text-[#12395B]">
-                    Self-Paced
+                    Self-Guided
                   </p>
                 </div>
 
@@ -633,16 +669,19 @@ export default function ProgramPage() {
 
         {/* This week */}
 
-        {!isSelfPlan && (
         <section className="rounded-2xl bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div>
               <h2 className="text-xl font-semibold text-slate-900">
-                This Week
+                {isSelfPlan
+                  ? "This Week's Workouts"
+                  : "This Week"}
               </h2>
 
               <p className="mt-1 text-sm text-slate-500">
-                Your Club100 sessions for the current week.
+                {isSelfPlan
+                  ? "Your scheduled guided workouts for the current week."
+                  : "Your Club100 sessions for the current week."}
               </p>
             </div>
 
@@ -673,11 +712,15 @@ export default function ProgramPage() {
           ) : (
             <div className="mt-5 rounded-xl bg-slate-50 p-5">
               <p className="font-medium text-slate-700">
-                No sessions this week
+                {isSelfPlan
+                  ? "No workouts this week"
+                  : "No sessions this week"}
               </p>
 
               <p className="mt-1 text-sm text-slate-500">
-                Check your schedule for your next Club100 session.
+                {isSelfPlan
+                  ? "Check your schedule for your next guided workout."
+                  : "Check your schedule for your next Club100 session."}
               </p>
 
               <Link
@@ -689,7 +732,6 @@ export default function ProgramPage() {
             </div>
           )}
         </section>
-        )}
 
         {/* Program information */}
 
@@ -718,7 +760,7 @@ export default function ProgramPage() {
                 </p>
 
                 <p className="mt-2 font-medium text-slate-800">
-                  Self-Paced · Train Anytime
+                  Self-Guided · Scheduled Workouts
                 </p>
               </div>
 
@@ -822,7 +864,7 @@ export default function ProgramPage() {
 
           <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
             {isSelfPlan
-              ? "Your Self plan combines flexible, self-paced training with guided assessment and progress tracking so you can train consistently and measure improvement."
+              ? "Your Self plan combines scheduled guided workouts with independent training, fitness assessment and progress tracking so you can train consistently and measure improvement."
               : "Your Club100 program combines varied training with regular participation and progress tracking to help you build fitness consistently."}
           </p>
 

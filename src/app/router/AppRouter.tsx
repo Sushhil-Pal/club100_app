@@ -40,6 +40,8 @@ import TrainerAssessmentPage from "../../pages/trainer/TrainerAssessmentPage";
 import TrainerAssessmentResultPage from "../../pages/trainer/TrainerAssessmentResultPage";
 import TrainerSessionDetailPage from "../../pages/trainer/TrainerSessionDetailPage";
 import MemberAssessmentResultPage from "../../pages/MemberAssessmentResultPage";
+import SelfAssessmentHomePage from "../../pages/SelfAssessmentHomePage";
+import SelfAssessmentPage from "../../pages/SelfAssessmentPage";
 
 export default function AppRouter() {
   return (
@@ -137,6 +139,16 @@ export default function AppRouter() {
                     <MemberAssessmentResultPage />
                 }
                 />
+
+              <Route
+                path="/assessment"
+                element={<SelfAssessmentHomePage />}
+              />
+
+              <Route
+                path="/assessment/:assessmentId"
+                element={<SelfAssessmentPage />}
+              />
 
               <Route
                 path="/program"

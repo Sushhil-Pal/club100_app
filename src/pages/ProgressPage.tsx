@@ -7,8 +7,10 @@ import {
 } from "@tanstack/react-query";
 
 import PageContainer from "../components/layout/PageContainer";
+import AssessmentJourneyCard from "../components/assessment/AssessmentJourneyCard";
 
 import {
+  getAssessmentContext,
   getMemberProgress,
 } from "../services/memberService";
 
@@ -58,7 +60,20 @@ export default function ProgressPage() {
         getMemberProgress,
     });
 
-  if (progressQuery.isLoading) {
+  const assessmentContextQuery =
+    useQuery({
+      queryKey: [
+        "member-assessment-context",
+      ],
+
+      queryFn:
+        getAssessmentContext,
+    });
+
+  if (
+    progressQuery.isLoading ||
+    assessmentContextQuery.isLoading
+  ) {
     return (
       <PageContainer>
         <div className="rounded-2xl bg-white p-6 shadow-sm">
@@ -98,6 +113,15 @@ export default function ProgressPage() {
   const progress =
     progressQuery.data;
 
+  const assessmentContext =
+    assessmentContextQuery.data ??
+    null;
+
+  const hasSelfAssessmentJourney =
+    Boolean(
+      assessmentContext?.allowed
+    );
+
   return (
     <PageContainer>
       <div className="space-y-6">
@@ -114,18 +138,36 @@ export default function ProgressPage() {
         </div>
 
         {!progress.hasAssessment ? (
-          <section className="rounded-2xl bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">
-              No assessment yet
-            </h2>
+          hasSelfAssessmentJourney &&
+          assessmentContext ? (
+            <AssessmentJourneyCard
+              context={assessmentContext}
+              heading="Your Fitness Assessment"
+            />
+          ) : (
+            <section className="rounded-2xl bg-white p-6 shadow-sm">
+              <h2 className="text-xl font-semibold text-slate-900">
+                No assessment yet
+              </h2>
 
-            <p className="mt-2 text-slate-500">
-              Your fitness progress will appear here after your
-              baseline assessment is completed.
-            </p>
-          </section>
+              <p className="mt-2 text-slate-500">
+                Your fitness progress will appear here after your
+                baseline assessment is completed.
+              </p>
+            </section>
+          )
         ) : (
           <>
+            {hasSelfAssessmentJourney &&
+            assessmentContext &&
+            assessmentContext.state !==
+              "Current" && (
+              <AssessmentJourneyCard
+                context={assessmentContext}
+                heading="Your Fitness Assessment"
+              />
+            )}
+
             {/* Overall Score */}
 
             <section className="rounded-2xl bg-white p-6 shadow-sm">
@@ -195,8 +237,7 @@ export default function ProgressPage() {
               </h2>
 
               <p className="mt-1 text-sm text-slate-500">
-                Your current score across the five Club100
-                fitness areas.
+                Your current scores across the fitness areas included in this assessment.
               </p>
 
               <div className="mt-6 space-y-6">

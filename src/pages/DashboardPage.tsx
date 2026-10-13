@@ -7,8 +7,10 @@ import {
 } from "react-router-dom";
 
 import PageContainer from "../components/layout/PageContainer";
+import AssessmentJourneyCard from "../components/assessment/AssessmentJourneyCard";
 
 import {
+  getAssessmentContext,
   getCurrentMember,
   getMemberProgress,
   getMemberSchedule,
@@ -142,6 +144,16 @@ export default function DashboardPage() {
         getMemberProgress,
     });
 
+  const assessmentContextQuery =
+    useQuery({
+      queryKey: [
+        "member-assessment-context",
+      ],
+
+      queryFn:
+        getAssessmentContext,
+    });
+
   // ---------------------------------------------------------
   // Loading
   // ---------------------------------------------------------
@@ -150,7 +162,8 @@ export default function DashboardPage() {
     memberQuery.isLoading ||
     programQuery.isLoading ||
     scheduleQuery.isLoading ||
-    progressQuery.isLoading
+    progressQuery.isLoading ||
+    assessmentContextQuery.isLoading
   ) {
     return (
       <PageContainer>
@@ -199,6 +212,17 @@ export default function DashboardPage() {
 
   const progress =
     progressQuery.data;
+
+  const assessmentContext =
+    assessmentContextQuery.data ??
+    null;
+
+  const isSelfPlan =
+    Boolean(
+      assessmentContext?.allowed &&
+      assessmentContext.plan?.code ===
+        "self"
+    );
 
   if (
     !member ||
@@ -261,7 +285,8 @@ export default function DashboardPage() {
             Next Session
         -------------------------------------------------- */}
 
-        {nextSession ? (
+        {!isSelfPlan && (
+          nextSession ? (
           <section className="rounded-2xl bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between gap-4">
               <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
@@ -390,6 +415,7 @@ export default function DashboardPage() {
               View Schedule →
             </Link>
           </section>
+        )
         )}
 
         {/* --------------------------------------------------
@@ -402,22 +428,55 @@ export default function DashboardPage() {
           ------------------------------------------------ */}
 
           {program ? (
-            <section className="rounded-2xl bg-white p-6 shadow-sm">
-              <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-                My Program
-              </p>
+            isSelfPlan &&
+            assessmentContext?.plan ? (
+              <section className="rounded-2xl bg-white p-6 shadow-sm">
+                <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                  My Program
+                </p>
 
-              <h2 className="mt-3 text-xl font-semibold text-slate-900">
-                {program.name}
-              </h2>
+                <h2 className="mt-3 text-xl font-semibold text-slate-900">
+                  {program.name}
+                </h2>
 
-              <div className="mt-5 flex items-center justify-between text-sm">
-                <span className="text-slate-600">
-                  Week{" "}
-                  {program.currentWeek}{" "}
-                  of{" "}
-                  {program.totalWeeks}
-                </span>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-[#2F80ED]">
+                    {assessmentContext.plan.name}
+                  </span>
+
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-600">
+                    Train Anytime
+                  </span>
+                </div>
+
+                <p className="mt-5 text-sm leading-6 text-slate-500">
+                  Train anytime, at your own pace, with guided Club100 workouts, fitness assessment and progress tracking.
+                </p>
+
+                <Link
+                  to="/program"
+                  className="mt-6 inline-block text-sm font-semibold text-[#2F80ED]"
+                >
+                  View Program →
+                </Link>
+              </section>
+            ) : (
+              <section className="rounded-2xl bg-white p-6 shadow-sm">
+                <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                  My Program
+                </p>
+
+                <h2 className="mt-3 text-xl font-semibold text-slate-900">
+                  {program.name}
+                </h2>
+
+                <div className="mt-5 flex items-center justify-between text-sm">
+                  <span className="text-slate-600">
+                    Week{" "}
+                    {program.currentWeek}{" "}
+                    of{" "}
+                    {program.totalWeeks}
+                  </span>
 
                 <span className="font-semibold text-[#2F80ED]">
                   {
@@ -469,13 +528,14 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <Link
-                to="/program"
-                className="mt-6 inline-block text-sm font-semibold text-[#2F80ED]"
-              >
-                View Program →
-              </Link>
-            </section>
+                <Link
+                  to="/program"
+                  className="mt-6 inline-block text-sm font-semibold text-[#2F80ED]"
+                >
+                  View Program →
+                </Link>
+              </section>
+            )
           ) : (
             <section className="rounded-2xl bg-white p-6 shadow-sm">
               <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
@@ -513,6 +573,13 @@ export default function DashboardPage() {
               Fitness Score
           ------------------------------------------------ */}
 
+          {isSelfPlan &&
+          assessmentContext ? (
+            <AssessmentJourneyCard
+              context={assessmentContext}
+              heading="Fitness Score"
+            />
+          ) : (
           <section className="rounded-2xl bg-white p-6 shadow-sm">
             <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
               Fitness Score
@@ -675,12 +742,14 @@ export default function DashboardPage() {
               </>
             )}
           </section>
+          )}
         </div>
 
         {/* --------------------------------------------------
             Latest Assessment
         -------------------------------------------------- */}
 
+        {!isSelfPlan && (
         <section className="rounded-2xl bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -775,6 +844,7 @@ export default function DashboardPage() {
             </Link>
           </div>
         </section>
+        )}
 
         {/* --------------------------------------------------
             Quick Actions
@@ -786,6 +856,20 @@ export default function DashboardPage() {
           </p>
 
           <div className="grid gap-3 sm:grid-cols-3">
+            {isSelfPlan ? (
+              <Link
+                to="/assessment"
+                className="rounded-2xl bg-white p-5 shadow-sm transition hover:shadow-md"
+              >
+                <p className="font-semibold text-[#12395B]">
+                  Assessment
+                </p>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  Fitness score and reassessments
+                </p>
+              </Link>
+            ) : (
             <Link
               to="/schedule"
               className="rounded-2xl bg-white p-5 shadow-sm transition hover:shadow-md"
@@ -798,6 +882,7 @@ export default function DashboardPage() {
                 Upcoming and past sessions
               </p>
             </Link>
+            )}
 
             <Link
               to="/progress"

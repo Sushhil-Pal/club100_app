@@ -7,12 +7,14 @@ import {
 } from "react-router-dom";
 
 import PageContainer from "../components/layout/PageContainer";
+import AssessmentJourneyCard from "../components/assessment/AssessmentJourneyCard";
 
 import {
   getCurrentProgram,
 } from "../services/programService";
 
 import {
+  getAssessmentContext,
   getMemberSchedule,
   type MemberScheduleSession,
 } from "../services/memberService";
@@ -282,13 +284,24 @@ export default function ProgramPage() {
         getMemberSchedule,
     });
 
+  const assessmentContextQuery =
+    useQuery({
+      queryKey: [
+        "member-assessment-context",
+      ],
+
+      queryFn:
+        getAssessmentContext,
+    });
+
   // ---------------------------------------------------------
   // Loading
   // ---------------------------------------------------------
 
   if (
     programQuery.isLoading ||
-    scheduleQuery.isLoading
+    scheduleQuery.isLoading ||
+    assessmentContextQuery.isLoading
   ) {
     return (
       <PageContainer>
@@ -366,6 +379,17 @@ export default function ProgramPage() {
   const schedule =
     scheduleQuery.data;
 
+  const assessmentContext =
+    assessmentContextQuery.data ??
+    null;
+
+  const isSelfPlan =
+    Boolean(
+      assessmentContext?.allowed &&
+      assessmentContext.plan?.code ===
+        "self"
+    );
+
   const allSessions = [
     ...(schedule?.upcoming ??
       []),
@@ -431,95 +455,185 @@ export default function ProgramPage() {
           </h1>
 
           <p className="mt-2 text-slate-600">
-            Track your Club100 training journey, sessions and attendance.
+            {isSelfPlan
+              ? "Your program, membership, fitness assessment and progress in one place."
+              : "Track your Club100 training journey, sessions and attendance."}
           </p>
         </div>
 
         {/* Program summary */}
 
-        <section className="overflow-hidden rounded-2xl bg-white shadow-sm">
-          <div className="bg-gradient-to-r from-[#12395B] to-[#2F80ED] p-6 text-white">
-            <p className="text-sm font-semibold uppercase tracking-wide text-blue-100">
-              Active Program
-            </p>
-
-            <h2 className="mt-2 text-2xl font-bold">
-              {program.name}
-            </h2>
-
-            {(program.startDate ||
-              program.endDate) && (
-              <p className="mt-2 text-sm text-blue-100">
-                {formatDate(
-                  program.startDate
-                )}
-                {" – "}
-                {formatDate(
-                  program.endDate
-                )}
+        {isSelfPlan &&
+        assessmentContext?.plan &&
+        assessmentContext.enrollment ? (
+          <section className="overflow-hidden rounded-2xl bg-white shadow-sm">
+            <div className="bg-gradient-to-r from-[#12395B] to-[#2F80ED] p-6 text-white">
+              <p className="text-sm font-semibold uppercase tracking-wide text-blue-100">
+                Active Program
               </p>
-            )}
-          </div>
 
-          <div className="p-6">
-            <div className="flex items-center justify-between gap-4 text-sm">
-              <span className="font-medium text-slate-700">
-                Week{" "}
-                {
-                  program.currentWeek
-                }{" "}
-                of{" "}
-                {
-                  program.totalWeeks
-                }
-              </span>
+              <h2 className="mt-2 text-2xl font-bold">
+                {program.name}
+              </h2>
 
-              <span className="font-semibold text-[#2F80ED]">
-                {completion}%
-              </span>
-            </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className="rounded-full bg-white/15 px-3 py-1 text-sm font-semibold">
+                  {assessmentContext.plan.name}
+                </span>
 
-            <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
-              <div
-                className="h-full rounded-full bg-[#2F80ED]"
-                style={{
-                  width:
-                    `${completion}%`,
-                }}
-              />
-            </div>
-
-            <div className="mt-6 grid grid-cols-2 gap-4">
-              <div className="rounded-xl bg-slate-50 p-4">
-                <p className="text-2xl font-bold text-[#12395B]">
-                  {
-                    program.sessionsCompleted
-                  }
-                </p>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  Sessions attended
-                </p>
+                <span className="rounded-full bg-white/15 px-3 py-1 text-sm font-semibold">
+                  Train Anytime
+                </span>
               </div>
 
-              <div className="rounded-xl bg-slate-50 p-4">
-                <p className="text-2xl font-bold text-[#12395B]">
-                  {
-                    program.attendancePercentage
-                  }
-                  %
+              {(assessmentContext.enrollment.startDate ||
+                assessmentContext.enrollment.endDate) && (
+                <p className="mt-3 text-sm text-blue-100">
+                  {formatDate(
+                    assessmentContext.enrollment.startDate ??
+                      null
+                  )}
+                  {" – "}
+                  {formatDate(
+                    assessmentContext.enrollment.endDate ??
+                      null
+                  )}
                 </p>
+              )}
+            </div>
 
-                <p className="mt-1 text-sm text-slate-500">
-                  Attendance
-                </p>
+            <div className="p-6">
+              <p className="text-sm leading-7 text-slate-600">
+                Your Self plan gives you the flexibility to train anytime, at your own pace, with guided Club100 workouts, fitness assessment and progress tracking.
+              </p>
+
+              <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-xl bg-slate-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Plan
+                  </p>
+
+                  <p className="mt-1 font-semibold text-[#12395B]">
+                    {assessmentContext.plan.name}
+                  </p>
+                </div>
+
+                <div className="rounded-xl bg-slate-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Training Style
+                  </p>
+
+                  <p className="mt-1 font-semibold text-[#12395B]">
+                    Self-Paced
+                  </p>
+                </div>
+
+                <div className="rounded-xl bg-slate-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Assessment
+                  </p>
+
+                  <p className="mt-1 font-semibold text-[#12395B]">
+                    Self Assessment
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        ) : (
+          <section className="overflow-hidden rounded-2xl bg-white shadow-sm">
+            <div className="bg-gradient-to-r from-[#12395B] to-[#2F80ED] p-6 text-white">
+              <p className="text-sm font-semibold uppercase tracking-wide text-blue-100">
+                Active Program
+              </p>
+
+              <h2 className="mt-2 text-2xl font-bold">
+                {program.name}
+              </h2>
+
+              {(program.startDate ||
+                program.endDate) && (
+                <p className="mt-2 text-sm text-blue-100">
+                  {formatDate(
+                    program.startDate
+                  )}
+                  {" – "}
+                  {formatDate(
+                    program.endDate
+                  )}
+                </p>
+              )}
+            </div>
+
+            <div className="p-6">
+              <div className="flex items-center justify-between gap-4 text-sm">
+                <span className="font-medium text-slate-700">
+                  Week{" "}
+                  {
+                    program.currentWeek
+                  }{" "}
+                  of{" "}
+                  {
+                    program.totalWeeks
+                  }
+                </span>
+
+                <span className="font-semibold text-[#2F80ED]">
+                  {completion}%
+                </span>
+              </div>
+
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
+                <div
+                  className="h-full rounded-full bg-[#2F80ED]"
+                  style={{
+                    width:
+                      `${completion}%`,
+                  }}
+                />
+              </div>
+
+              <div className="mt-6 grid grid-cols-2 gap-4">
+                <div className="rounded-xl bg-slate-50 p-4">
+                  <p className="text-2xl font-bold text-[#12395B]">
+                    {
+                      program.sessionsCompleted
+                    }
+                  </p>
+
+                  <p className="mt-1 text-sm text-slate-500">
+                    Sessions attended
+                  </p>
+                </div>
+
+                <div className="rounded-xl bg-slate-50 p-4">
+                  <p className="text-2xl font-bold text-[#12395B]">
+                    {
+                      program.attendancePercentage
+                    }
+                    %
+                  </p>
+
+                  <p className="mt-1 text-sm text-slate-500">
+                    Attendance
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {isSelfPlan &&
+        assessmentContext && (
+          <AssessmentJourneyCard
+            context={assessmentContext}
+            heading="Your Fitness Assessment"
+          />
+        )}
 
         {/* This week */}
 
+        {!isSelfPlan && (
         <section className="rounded-2xl bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div>
@@ -575,9 +689,67 @@ export default function ProgramPage() {
             </div>
           )}
         </section>
+        )}
 
         {/* Program information */}
 
+        {isSelfPlan &&
+        assessmentContext?.plan &&
+        assessmentContext.enrollment ? (
+          <section className="rounded-2xl bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-slate-900">
+              Membership Details
+            </h2>
+
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-xl border border-slate-200 p-4">
+                <p className="text-sm font-semibold text-slate-500">
+                  Plan
+                </p>
+
+                <p className="mt-2 font-medium text-slate-800">
+                  {assessmentContext.plan.name}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 p-4">
+                <p className="text-sm font-semibold text-slate-500">
+                  Training Style
+                </p>
+
+                <p className="mt-2 font-medium text-slate-800">
+                  Self-Paced · Train Anytime
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 p-4">
+                <p className="text-sm font-semibold text-slate-500">
+                  Membership Started
+                </p>
+
+                <p className="mt-2 font-medium text-slate-800">
+                  {formatDate(
+                    assessmentContext.enrollment.startDate ??
+                      null
+                  )}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 p-4">
+                <p className="text-sm font-semibold text-slate-500">
+                  Membership Ends
+                </p>
+
+                <p className="mt-2 font-medium text-slate-800">
+                  {formatDate(
+                    assessmentContext.enrollment.endDate ??
+                      null
+                  )}
+                </p>
+              </div>
+            </div>
+          </section>
+        ) : (
         <section className="rounded-2xl bg-white p-6 shadow-sm">
           <h2 className="text-xl font-semibold text-slate-900">
             Program Details
@@ -639,6 +811,7 @@ export default function ProgramPage() {
             </div>
           </div>
         </section>
+        )}
 
         {/* Club100 approach */}
 
@@ -648,16 +821,25 @@ export default function ProgramPage() {
           </h2>
 
           <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-            Your Club100 program combines varied training with regular participation and progress tracking to help you build fitness consistently.
+            {isSelfPlan
+              ? "Your Self plan combines flexible, self-paced training with guided assessment and progress tracking so you can train consistently and measure improvement."
+              : "Your Club100 program combines varied training with regular participation and progress tracking to help you build fitness consistently."}
           </p>
 
           <div className="mt-5 flex flex-wrap gap-2">
-            {[
-              "Power",
-              "Flow",
-              "Pulse",
-              "Play",
-            ].map(
+            {(isSelfPlan
+              ? [
+                  "Power",
+                  "Flow",
+                  "Pulse",
+                ]
+              : [
+                  "Power",
+                  "Flow",
+                  "Pulse",
+                  "Play",
+                ]
+            ).map(
               (item) => (
                 <span
                   key={item}

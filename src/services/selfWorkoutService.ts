@@ -54,3 +54,28 @@ export function setInitialSelfSchedule(enrollmentId: string, slots: SelfSchedule
 export function reviseSelfSchedule(enrollmentId: string, effectiveFrom: string, slots: SelfScheduleSlot[]) {
   return apiPost<{revision: string}>("/api/method/club100_core.api.self_workouts.revise_self_workout_schedule", {enrollment_id: enrollmentId, effective_from: effectiveFrom, slots});
 }
+
+
+export type SelfWorkoutActivity = {
+  name: string;
+  workoutId: string;
+  status: "Started" | "Completed";
+  startedAt: string | null;
+  completedAt: string | null;
+};
+export type SelfWorkoutActivitySummary = {
+  enrollment: string;
+  activities: SelfWorkoutActivity[];
+  started: number;
+  completed: number;
+};
+export function getSelfWorkoutActivity(enrollmentId: string) {
+  const q = new URLSearchParams({enrollment_id: enrollmentId});
+  return apiGet<SelfWorkoutActivitySummary>(`/api/method/club100_core.api.self_workout_activity.get_self_workout_activity?${q}`);
+}
+export function startSelfWorkout(workoutId: string) {
+  return apiPost<SelfWorkoutActivity>("/api/method/club100_core.api.self_workout_activity.start_self_workout", {workout_id: workoutId});
+}
+export function completeSelfWorkout(workoutId: string) {
+  return apiPost<SelfWorkoutActivity>("/api/method/club100_core.api.self_workout_activity.complete_self_workout", {workout_id: workoutId});
+}

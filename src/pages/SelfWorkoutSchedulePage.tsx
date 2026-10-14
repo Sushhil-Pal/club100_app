@@ -2,7 +2,7 @@ import {useState} from "react";
 import {useQuery} from "@tanstack/react-query";
 import {Link} from "react-router-dom";
 import PageContainer from "../components/layout/PageContainer";
-import {getVirtualWorkouts, getSelfScheduleSettings} from "../services/selfWorkoutService";
+import {getVirtualWorkouts, getSelfWorkoutActivity, getSelfScheduleSettings} from "../services/selfWorkoutService";
 
 const isoDate = (date: Date) => {
   const y = date.getFullYear();
@@ -30,11 +30,15 @@ export default function SelfWorkoutSchedulePage({enrollmentId}:{enrollmentId:str
     refetchInterval:30000,
     enabled:settings.data?.configured===true,
   });
+  const activityQuery = useQuery({queryKey:["self-workout-activity",enrollmentId],queryFn:()=>getSelfWorkoutActivity(enrollmentId),enabled:settings.data?.configured===true,refetchInterval:30000});
   if(settings.isPending) return <PageContainer><p className="p-6">Loading workout settings...</p></PageContainer>;
   if(settings.isError) return <PageContainer><p className="p-6 text-red-700">{settings.error.message}</p></PageContainer>;
   if(!settings.data?.configured) return <PageContainer><div className="space-y-4 rounded-2xl bg-white p-6 shadow-sm"><h1 className="text-2xl font-bold text-[#12395B]">Set Up Your Workout Schedule</h1><p>Choose {settings.data?.workoutsPerWeek} days each week and your preferred time for each workout.</p><Link to={`/self-schedule/${encodeURIComponent(enrollmentId)}`} className="inline-block rounded-xl bg-[#2F80ED] px-5 py-3 font-semibold text-white">Set Up Schedule</Link></div></PageContainer>;
   if(query.isPending) return <PageContainer><p className="p-6">Loading your guided workouts...</p></PageContainer>;
   if(query.isError) return <PageContainer><div className="rounded-xl bg-red-50 p-5 text-red-700">{query.error.message}</div></PageContainer>;
+  if(activityQuery.isPending) return <PageContainer><p className="p-6">Loading workout activity...</p></PageContainer>;
+  if(activityQuery.isError) return <PageContainer><p className="p-6 text-red-700">{activityQuery.error.message}</p></PageContainer>;
+  const activityById = new Map(activityQuery.data?.activities.map(a=>[a.workoutId,a])??[]);
   const ordered = [...query.data.workouts].sort((a,b)=>a.availableFrom.localeCompare(b.availableFrom));
   const workouts = ordered.filter(w=>tab==="past"?w.accessState==="Expired":w.accessState!=="Expired");
   const nextId = ordered.find(w=>w.accessState==="Locked")?.id;
@@ -48,13 +52,13 @@ export default function SelfWorkoutSchedulePage({enrollmentId}:{enrollmentId:str
     {workouts.length===0&&<div className="rounded-xl bg-white p-6 text-slate-600">No {tab} workouts in this date range.</div>}
     {workouts.map(w=><section key={w.id} className="rounded-2xl bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-center gap-2 text-sm"><span className="font-semibold text-[#2F80ED]">{prettyDate(w.scheduledDate)}</span>
-      <span className="rounded-full bg-slate-100 px-3 py-1">{w.accessState==="Available"?"Available Now":w.accessState==="Expired"?"Access Ended":"Scheduled"}</span>
+      <span className="rounded-full bg-slate-100 px-3 py-1">{activityById.get(w.id)?.status==="Completed"?"Completed":activityById.get(w.id)?.status==="Started"?"Started":w.accessState==="Available"?"Available Now":w.accessState==="Expired"?"Access Ended":"Scheduled"}</span>
       {w.id===nextId&&<span className="rounded-full bg-blue-50 px-3 py-1 text-[#12395B]">Next Workout</span>}</div>
       <h2 className="mt-3 text-xl font-bold text-[#12395B]">{w.title}</h2>
       <p className="mt-1 text-sm text-slate-500">Workout {w.sequenceNo} · {w.format || "Self-Guided"}</p>
       <p className="mt-3 text-sm text-slate-700">{prettyTime(w.startTime)} · {w.durationMinutes} minutes</p>
       <p className="mt-2 text-sm text-slate-500">{w.accessState==="Locked"?`Video available at ${prettyTime(w.availableFrom.split("T")[1])}`:w.accessState==="Available"?`Video available until ${prettyTime(w.availableUntil.split("T")[1])}`:"Video access has ended"}</p>
-      <Link className={`mt-4 inline-block rounded-xl px-5 py-3 text-sm font-semibold ${w.accessState==="Available"?"bg-[#2F80ED] text-white":"border border-[#2F80ED] text-[#2F80ED]"}`} to={`/self-workout/${encodeURIComponent(w.id)}`}>{w.accessState==="Available"?"Start Workout":"View Details"}</Link>
+      <Link className={`mt-4 inline-block rounded-xl px-5 py-3 text-sm font-semibold ${w.accessState==="Available"?"bg-[#2F80ED] text-white":"border border-[#2F80ED] text-[#2F80ED]"}`} to={`/self-workout/${encodeURIComponent(w.id)}`}>{activityById.get(w.id)?.status==="Completed"?"View Completed":w.accessState==="Available"?"Start Workout":"View Details"}</Link>
     </section>)}
   </div></PageContainer>;
 }

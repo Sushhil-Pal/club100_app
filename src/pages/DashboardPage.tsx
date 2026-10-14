@@ -8,6 +8,7 @@ import {
 
 import PageContainer from "../components/layout/PageContainer";
 import AssessmentJourneyCard from "../components/assessment/AssessmentJourneyCard";
+import SelfWorkoutSummary from "../components/self/SelfWorkoutSummary";
 
 import {
   getAssessmentContext,
@@ -270,6 +271,7 @@ export default function DashboardPage() {
   return (
     <PageContainer>
       <div className="space-y-6">
+        {isSelfPlan && assessmentContext?.enrollment?.id && <SelfWorkoutSummary enrollmentId={assessmentContext.enrollment.id} compact />}
         {/* --------------------------------------------------
             Greeting
         -------------------------------------------------- */}

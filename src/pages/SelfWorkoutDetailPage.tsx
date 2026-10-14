@@ -1,10 +1,17 @@
 import {useParams,Link} from "react-router-dom";
-import {useQuery} from "@tanstack/react-query";
-import {getVirtualWorkoutDetail} from "../services/selfWorkoutService";
+import {useQuery,useMutation,useQueryClient} from "@tanstack/react-query";
+import {getVirtualWorkoutDetail,getSelfWorkoutActivity,startSelfWorkout,completeSelfWorkout} from "../services/selfWorkoutService";
 import PageContainer from "../components/layout/PageContainer";
 
 export default function SelfWorkoutDetailPage(){
   const {id} = useParams();
+  const client = useQueryClient();
+  const enrollment = id?.split(":")[0];
+  const activityQuery = useQuery({queryKey:["self-workout-activity",enrollment],queryFn:()=>getSelfWorkoutActivity(enrollment!),enabled:!!enrollment});
+  const currentActivity = activityQuery.data?.activities.find(a=>a.workoutId===id);
+  const refresh = () => client.invalidateQueries({queryKey:["self-workout-activity",enrollment]});
+  const start = useMutation({mutationFn:()=>startSelfWorkout(id!),onSuccess:refresh});
+  const complete = useMutation({mutationFn:()=>completeSelfWorkout(id!),onSuccess:refresh});
   const query = useQuery({
     queryKey:["virtual-workout-detail",id],
     queryFn:()=>getVirtualWorkoutDetail(id!),
@@ -22,7 +29,15 @@ export default function SelfWorkoutDetailPage(){
         <p className="mt-3 text-sm text-slate-600">Level: {query.data.fitnessLevel || "All levels"} · Format: {query.data.format || "Self-Guided"}</p>
         {query.data.equipmentRequired&&<p className="mt-3 text-sm text-slate-600">Equipment: {query.data.equipmentRequired}</p>}
         {query.data.instructions&&<div className="prose mt-5 text-sm text-slate-700" dangerouslySetInnerHTML={{__html:query.data.instructions}} />}
-        {query.data.accessState==="Available"&&query.data.videoUrl?<a href={query.data.videoUrl} target="_blank" rel="noopener noreferrer" className="mt-5 inline-block rounded-xl bg-[#2F80ED] px-5 py-3 font-semibold text-white">Open Guided Workout</a>:<p className="mt-5 rounded-xl bg-slate-100 p-4 text-sm text-slate-600">{query.data.accessState==="Expired"?"Workout video access has ended.":query.data.accessState==="Locked"?"The workout video becomes available at your scheduled start time.":"No video is configured for this workout."}</p>}
+        {activityQuery.isPending?<p className="mt-4 text-sm text-slate-500">Loading workout activity...</p>:activityQuery.isError?<p className="mt-4 text-sm text-red-700">Unable to load activity: {activityQuery.error.message}</p>:<div className="mt-5 space-y-3">
+          {currentActivity?.status==="Completed"?<p className="rounded-xl bg-green-50 p-4 font-semibold text-green-700">✓ Workout Completed</p>:currentActivity?.status==="Started"?<p className="text-sm font-semibold text-[#12395B]">Workout started</p>:null}
+          {query.data.accessState==="Available"&&query.data.videoUrl&&currentActivity?.status!=="Completed"&&<button type="button" disabled={start.isPending} onClick={async()=>{const tab=window.open("about:blank","_blank");try{await start.mutateAsync();if(tab){tab.opener=null;tab.location.href=query.data.videoUrl!;}else{window.location.href=query.data.videoUrl!;}}catch{tab?.close();}}} className="rounded-xl bg-[#2F80ED] px-5 py-3 font-semibold text-white disabled:opacity-50">{start.isPending?"Starting...":currentActivity?"Open Guided Workout":"Start Workout"}</button>}
+          {currentActivity?.status==="Started"&&<button type="button" disabled={complete.isPending} onClick={()=>complete.mutate()} className="ml-2 rounded-xl border border-[#2F80ED] px-5 py-3 font-semibold text-[#2F80ED] disabled:opacity-50">{complete.isPending?"Saving...":"Mark Completed"}</button>}
+          {start.isError&&<p className="text-sm text-red-700">{start.error.message}</p>}
+          {complete.isError&&<p className="text-sm text-red-700">{complete.error.message}</p>}
+          {query.data.accessState!=="Available"&&<p className="rounded-xl bg-slate-100 p-4 text-sm text-slate-600">{query.data.accessState==="Expired"?"Workout video access has ended.":"The workout video becomes available at your scheduled start time."}</p>}
+          {query.data.accessState==="Available"&&!query.data.videoUrl&&<p className="text-sm text-slate-600">No video is configured for this workout.</p>}
+        </div>}
       </section>
     </>}
   </div></PageContainer>;

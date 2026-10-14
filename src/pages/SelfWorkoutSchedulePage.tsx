@@ -2,7 +2,7 @@ import {useState} from "react";
 import {useQuery} from "@tanstack/react-query";
 import {Link} from "react-router-dom";
 import PageContainer from "../components/layout/PageContainer";
-import {getVirtualWorkouts} from "../services/selfWorkoutService";
+import {getVirtualWorkouts, getSelfScheduleSettings} from "../services/selfWorkoutService";
 
 const isoDate = (date: Date) => {
   const y = date.getFullYear();
@@ -23,11 +23,16 @@ export default function SelfWorkoutSchedulePage({enrollmentId}:{enrollmentId:str
   const today = isoDate(new Date());
   const from = new Date(); from.setDate(from.getDate()-14);
   const until = new Date(); until.setDate(until.getDate()+16);
+  const settings = useQuery({queryKey:["self-workout-settings",enrollmentId],queryFn:()=>getSelfScheduleSettings(enrollmentId)});
   const query = useQuery({
     queryKey:["virtual-self-workouts",enrollmentId,today],
     queryFn:()=>getVirtualWorkouts(enrollmentId,isoDate(from),isoDate(until)),
     refetchInterval:30000,
+    enabled:settings.data?.configured===true,
   });
+  if(settings.isPending) return <PageContainer><p className="p-6">Loading workout settings...</p></PageContainer>;
+  if(settings.isError) return <PageContainer><p className="p-6 text-red-700">{settings.error.message}</p></PageContainer>;
+  if(!settings.data?.configured) return <PageContainer><div className="space-y-4 rounded-2xl bg-white p-6 shadow-sm"><h1 className="text-2xl font-bold text-[#12395B]">Set Up Your Workout Schedule</h1><p>Choose {settings.data?.workoutsPerWeek} days each week and your preferred time for each workout.</p><Link to={`/self-schedule/${encodeURIComponent(enrollmentId)}`} className="inline-block rounded-xl bg-[#2F80ED] px-5 py-3 font-semibold text-white">Set Up Schedule</Link></div></PageContainer>;
   if(query.isPending) return <PageContainer><p className="p-6">Loading your guided workouts...</p></PageContainer>;
   if(query.isError) return <PageContainer><div className="rounded-xl bg-red-50 p-5 text-red-700">{query.error.message}</div></PageContainer>;
   const ordered = [...query.data.workouts].sort((a,b)=>a.availableFrom.localeCompare(b.availableFrom));
@@ -36,6 +41,7 @@ export default function SelfWorkoutSchedulePage({enrollmentId}:{enrollmentId:str
   return <PageContainer><div className="space-y-5">
     <header><h1 className="text-3xl font-bold text-[#12395B]">Self · Guided Workouts</h1>
     <p className="mt-2 text-slate-600">Your personalized scheduled workout program.</p></header>
+    <div><Link to={`/self-schedule/${encodeURIComponent(enrollmentId)}`} className="text-sm font-semibold text-[#2F80ED]">Manage Weekly Schedule →</Link></div>
     <div className="flex rounded-xl bg-slate-100 p-1">
       {(["upcoming","past"] as const).map(t=><button key={t} type="button" onClick={()=>setTab(t)} className={`flex-1 rounded-lg p-3 text-sm font-semibold ${tab===t?"bg-white text-[#2F80ED] shadow-sm":"text-slate-500"}`}>{t==="upcoming"?"Upcoming":"Past"}</button>)}
     </div>

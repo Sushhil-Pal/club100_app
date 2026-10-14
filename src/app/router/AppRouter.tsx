@@ -28,6 +28,7 @@ import ProfilePage from "../../pages/ProfilePage";
 
 import SessionPage from "../../pages/SessionPage";
 import SelfWorkoutDetailPage from "../../pages/SelfWorkoutDetailPage";
+import SelfWorkoutScheduleSettingsPage from "../../pages/SelfWorkoutScheduleSettingsPage";
 import FeedbackPage from "../../pages/FeedbackPage";
 
 import TrainerTodayPage from "../../pages/trainer/TrainerTodayPage";
@@ -128,6 +129,8 @@ export default function AppRouter() {
                 path="/schedule"
                 element={<SchedulePage />}
               />
+              <Route path="/self-schedule/:enrollmentId" element={<SelfWorkoutScheduleSettingsPage />} />
+              <Route path="/self-workout/:id" element={<SelfWorkoutDetailPage />} />
 
               <Route
                 path="/progress"
@@ -166,7 +169,7 @@ export default function AppRouter() {
                 Member immersive routes
             ============================================== */}
 
-            <Route path="/self-workout/:id" element={<SelfWorkoutDetailPage />} />
+
 
             <Route
               path="/session/:id"

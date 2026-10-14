@@ -1,4 +1,4 @@
-import { apiGet } from "./api";
+import { apiGet, apiPost } from "./api";
 
 export type VirtualWorkout = {
   id: string;
@@ -33,4 +33,24 @@ export async function getVirtualWorkoutDetail(id: string) {
   return apiGet<VirtualWorkoutDetail>(
     `/api/method/club100_core.api.self_workouts.virtual_workout_detail?${query}`
   );
+}
+
+export type SelfScheduleSlot = {weekday: string; start_time: string};
+export type SelfScheduleSettings = {
+  enrollment: string;
+  workoutsPerWeek: number;
+  configured: boolean;
+  slots: SelfScheduleSlot[];
+  pendingRevisions: {effectiveFrom: string; slots: SelfScheduleSlot[]}[];
+  earliestChangeDate: string;
+};
+export function getSelfScheduleSettings(enrollmentId: string) {
+  const q = new URLSearchParams({enrollment_id: enrollmentId});
+  return apiGet<SelfScheduleSettings>(`/api/method/club100_core.api.self_workouts.get_self_workout_schedule_settings?${q}`);
+}
+export function setInitialSelfSchedule(enrollmentId: string, slots: SelfScheduleSlot[]) {
+  return apiPost<{configured: boolean}>("/api/method/club100_core.api.self_workouts.set_initial_self_workout_schedule", {enrollment_id: enrollmentId, slots});
+}
+export function reviseSelfSchedule(enrollmentId: string, effectiveFrom: string, slots: SelfScheduleSlot[]) {
+  return apiPost<{revision: string}>("/api/method/club100_core.api.self_workouts.revise_self_workout_schedule", {enrollment_id: enrollmentId, effective_from: effectiveFrom, slots});
 }

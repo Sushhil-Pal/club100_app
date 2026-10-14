@@ -440,7 +440,7 @@ function SessionCard({
   );
 }
 
-export default function SchedulePage() {
+function LegacySchedulePage() {
   const [
     activeTab,
     setActiveTab,
@@ -641,4 +641,19 @@ export default function SchedulePage() {
       </div>
     </PageContainer>
   );
+}
+
+
+import {getAssessmentContext} from "../services/memberService";
+import SelfWorkoutSchedulePage from "./SelfWorkoutSchedulePage";
+
+export default function SchedulePage(){
+ const context=useQuery({queryKey:["assessment-context"],queryFn:getAssessmentContext});
+ if(context.isPending) return <div className="p-6">Loading schedule...</div>;
+ if(context.isError) return <div className="p-6 text-red-700">Unable to load member plan: {context.error.message}</div>;
+ if(context.data.plan?.code==="self") {
+   if(!context.data.enrollment?.id) return <div className="p-6 text-red-700">Active Self enrollment not found.</div>;
+   return <SelfWorkoutSchedulePage enrollmentId={context.data.enrollment.id}/>;
+ }
+ return <LegacySchedulePage/>;
 }

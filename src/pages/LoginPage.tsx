@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 
 import {
@@ -8,6 +8,7 @@ import {
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [loginId, setLoginId] =
     useState("");
@@ -20,6 +21,8 @@ export default function LoginPage() {
       login(loginId, password),
 
     onSuccess: (response) => {
+      // Prevent member-specific queries from surviving an account change.
+      queryClient.clear();
       const isTrainer =
         response.roles.includes("trainer");
 

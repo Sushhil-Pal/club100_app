@@ -188,7 +188,8 @@ export default function DashboardPage() {
     memberQuery.isError ||
     programQuery.isError ||
     scheduleQuery.isError ||
-    progressQuery.isError
+    progressQuery.isError ||
+    assessmentContextQuery.isError
   ) {
     return (
       <PageContainer>
@@ -223,8 +224,7 @@ export default function DashboardPage() {
 
   const isSelfPlan =
     Boolean(
-      assessmentContext?.allowed &&
-      assessmentContext.plan?.code ===
+      assessmentContext?.plan?.code ===
         "self"
     );
 

@@ -356,7 +356,8 @@ export default function ProgramPage() {
 
   if (
     programQuery.isError ||
-    scheduleQuery.isError
+    scheduleQuery.isError ||
+    assessmentContextQuery.isError
   ) {
     return (
       <PageContainer>
@@ -421,8 +422,7 @@ export default function ProgramPage() {
 
   const isSelfPlan =
     Boolean(
-      assessmentContext?.allowed &&
-      assessmentContext.plan?.code ===
+      assessmentContext?.plan?.code ===
         "self"
     );
 

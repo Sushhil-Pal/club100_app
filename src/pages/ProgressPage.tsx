@@ -88,6 +88,7 @@ export default function ProgressPage() {
 
   if (
     progressQuery.isError ||
+    assessmentContextQuery.isError ||
     !progressQuery.data
   ) {
     return (

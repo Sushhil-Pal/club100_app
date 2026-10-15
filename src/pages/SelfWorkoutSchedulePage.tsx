@@ -43,22 +43,22 @@ export default function SelfWorkoutSchedulePage({enrollmentId}:{enrollmentId:str
   const workouts = ordered.filter(w=>tab==="past"?w.accessState==="Expired":w.accessState!=="Expired");
   const nextId = ordered.find(w=>w.accessState==="Locked")?.id;
   return <PageContainer><div className="space-y-5">
-    <header><h1 className="text-3xl font-bold text-[#12395B]">Self · Guided Workouts</h1>
-    <p className="mt-2 text-slate-600">Your personalized scheduled workout program.</p></header>
+    <header><h1 className="text-3xl font-bold text-[#12395B]">My Workouts</h1>
+    <p className="mt-2 text-slate-600">Your scheduled self-guided workouts.</p></header>
     <div><Link to={`/self-schedule/${encodeURIComponent(enrollmentId)}`} className="text-sm font-semibold text-[#2F80ED]">Manage Weekly Schedule →</Link></div>
     <div className="flex rounded-xl bg-slate-100 p-1">
       {(["upcoming","past"] as const).map(t=><button key={t} type="button" onClick={()=>setTab(t)} className={`flex-1 rounded-lg p-3 text-sm font-semibold ${tab===t?"bg-white text-[#2F80ED] shadow-sm":"text-slate-500"}`}>{t==="upcoming"?"Upcoming":"Past"}</button>)}
     </div>
     {workouts.length===0&&<div className="rounded-xl bg-white p-6 text-slate-600">No {tab} workouts in this date range.</div>}
-    {workouts.map(w=><section key={w.id} className="rounded-2xl bg-white p-5 shadow-sm">
+    {workouts.map(w=><section key={w.id} className="rounded-2xl bg-white p-4 shadow-sm">
       <div className="flex flex-wrap items-center gap-2 text-sm"><span className="font-semibold text-[#2F80ED]">{prettyDate(w.scheduledDate)}</span>
       <span className="rounded-full bg-slate-100 px-3 py-1">{activityById.get(w.id)?.status==="Completed"?"Completed":activityById.get(w.id)?.status==="Started"?"Started":w.accessState==="Available"?"Available Now":w.accessState==="Expired"?"Access Ended":"Scheduled"}</span>
       {w.id===nextId&&<span className="rounded-full bg-blue-50 px-3 py-1 text-[#12395B]">Next Workout</span>}</div>
-      <h2 className="mt-3 text-xl font-bold text-[#12395B]">{w.title}</h2>
+      <h2 className="mt-2 text-lg font-bold text-[#12395B]">{w.title}</h2>
       <p className="mt-1 text-sm text-slate-500">Workout {w.sequenceNo} · {w.format || "Self-Guided"}</p>
-      <p className="mt-3 text-sm text-slate-700">{prettyTime(w.startTime)} · {w.durationMinutes} minutes</p>
-      <p className="mt-2 text-sm text-slate-500">{w.accessState==="Locked"?`Video available at ${prettyTime(w.availableFrom.split("T")[1])}`:w.accessState==="Available"?`Video available until ${prettyTime(w.availableUntil.split("T")[1])}`:"Video access has ended"}</p>
-      <Link className={`mt-4 inline-block rounded-xl px-5 py-3 text-sm font-semibold ${w.accessState==="Available"?"bg-[#2F80ED] text-white":"border border-[#2F80ED] text-[#2F80ED]"}`} to={`/self-workout/${encodeURIComponent(w.id)}`}>{activityById.get(w.id)?.status==="Completed"?"View Completed":w.accessState==="Available"?"Start Workout":"View Details"}</Link>
+      <p className="mt-2 text-sm text-slate-700">{prettyTime(w.startTime)} · {w.durationMinutes} minutes</p>
+      <p className="mt-1 text-sm text-slate-500">{w.accessState==="Locked"?`Video available at ${prettyTime(w.availableFrom.split("T")[1])}`:w.accessState==="Available"?`Video available until ${prettyTime(w.availableUntil.split("T")[1])}`:"Video access has ended"}</p>
+      <Link className={`mt-3 inline-block rounded-xl px-4 py-2 text-sm font-semibold ${w.accessState==="Available"?"bg-[#2F80ED] text-white":"border border-[#2F80ED] text-[#2F80ED]"}`} to={`/self-workout/${encodeURIComponent(w.id)}`}>{activityById.get(w.id)?.status==="Completed"?"View Completed":w.accessState==="Available"?"Start Workout":"View Details"}</Link>
     </section>)}
   </div></PageContainer>;
 }

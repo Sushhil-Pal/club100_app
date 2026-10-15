@@ -8,6 +8,7 @@ import {
 
 import PageContainer from "../components/layout/PageContainer";
 import AssessmentJourneyCard from "../components/assessment/AssessmentJourneyCard";
+import SelfWeeklyWorkouts from "../components/self/SelfWeeklyWorkouts";
 
 import {
   getCurrentProgram,
@@ -470,7 +471,7 @@ export default function ProgramPage() {
   const completion =
     Math.min(
       Math.max(
-        program.completionPercentage,
+        program.completionPercentage ?? 0,
         0
       ),
       100
@@ -514,11 +515,7 @@ export default function ProgramPage() {
 
               <div className="mt-3 flex flex-wrap gap-2">
                 <span className="rounded-full bg-white/15 px-3 py-1 text-sm font-semibold">
-                  {assessmentContext.plan.name}
-                </span>
-
-                <span className="rounded-full bg-white/15 px-3 py-1 text-sm font-semibold">
-                  Guided Workouts
+                  Self-Guided
                 </span>
               </div>
 
@@ -602,6 +599,12 @@ export default function ProgramPage() {
             </div>
 
             <div className="p-6">
+              {program.pricingModel === "Society Batch" ? (
+                <p className="text-sm text-slate-600">
+                  Onsite training · Ongoing participation
+                </p>
+              ) : (
+                <>
               <div className="flex items-center justify-between gap-4 text-sm">
                 <span className="font-medium text-slate-700">
                   Week{" "}
@@ -629,6 +632,9 @@ export default function ProgramPage() {
                 />
               </div>
 
+                </>
+              )}
+
               <div className="mt-6 grid grid-cols-2 gap-4">
                 <div className="rounded-xl bg-slate-50 p-4">
                   <p className="text-2xl font-bold text-[#12395B]">
@@ -651,7 +657,7 @@ export default function ProgramPage() {
                   </p>
 
                   <p className="mt-1 text-sm text-slate-500">
-                    Attendance
+                    {program.pricingModel === "Society Batch" ? "Recorded attendance" : "Attendance"}
                   </p>
                 </div>
               </div>
@@ -667,8 +673,10 @@ export default function ProgramPage() {
           />
         )}
 
-        {/* This week */}
-
+        {/* Self workouts must come from the virtual workout API, not the session feed. */}
+        {isSelfPlan && assessmentContext?.enrollment?.id ? (
+          <SelfWeeklyWorkouts enrollmentId={assessmentContext.enrollment.id} />
+        ) : !isSelfPlan ? (
         <section className="rounded-2xl bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div>
@@ -732,6 +740,10 @@ export default function ProgramPage() {
             </div>
           )}
         </section>
+
+        ) : (
+          <section className="rounded-2xl bg-white p-6 text-red-700 shadow-sm">Active Self enrollment not found.</section>
+        )}
 
         {/* Program information */}
 
@@ -798,6 +810,7 @@ export default function ProgramPage() {
           </h2>
 
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            {program.pricingModel !== "Society Batch" && (
             <div className="rounded-xl border border-slate-200 p-4">
               <p className="text-sm font-semibold text-slate-500">
                 Program Length
@@ -813,6 +826,8 @@ export default function ProgramPage() {
                   : "weeks"}
               </p>
             </div>
+
+            )}
 
             <div className="rounded-xl border border-slate-200 p-4">
               <p className="text-sm font-semibold text-slate-500">
@@ -842,7 +857,7 @@ export default function ProgramPage() {
 
             <div className="rounded-xl border border-slate-200 p-4">
               <p className="text-sm font-semibold text-slate-500">
-                Program Ends
+                {program.pricingModel === "Society Batch" ? "Membership Valid Until" : "Program Ends"}
               </p>
 
               <p className="mt-2 font-medium text-slate-800">

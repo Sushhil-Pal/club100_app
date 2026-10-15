@@ -19,6 +19,7 @@ import {
 } from "../services/memberService";
 
 import { logout } from "../services/authService";
+import { getCurrentProgram } from "../services/programService";
 
 import {
   disablePushNotifications,
@@ -39,6 +40,11 @@ export default function ProfilePage() {
   const memberQuery = useQuery({
     queryKey: ["current-member"],
     queryFn: getCurrentMember,
+  });
+
+  const programQuery = useQuery({
+    queryKey: ["current-program"],
+    queryFn: getCurrentProgram,
   });
 
   const [fullName, setFullName] =
@@ -401,6 +407,35 @@ export default function ProfilePage() {
           <h2 className="text-xl font-semibold text-slate-900">
             Membership
           </h2>
+
+          {programQuery.isLoading ? (
+            <p className="mt-4 text-sm text-slate-500">Loading membership details...</p>
+          ) : programQuery.isError ? (
+            <p className="mt-4 text-sm text-red-700">Unable to load membership details.</p>
+          ) : programQuery.data ? (
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-xl bg-slate-50 p-4">
+                <p className="text-sm text-slate-500">Active Program</p>
+                <p className="mt-2 font-semibold text-[#12395B]">{programQuery.data.name}</p>
+              </div>
+              <div className="rounded-xl bg-slate-50 p-4">
+                <p className="text-sm text-slate-500">Membership</p>
+                <p className="mt-2 font-semibold text-[#12395B]">
+                  {programQuery.data.pricingModel === "Society Batch" ? "Society · Onsite" :
+                    programQuery.data.planCode === "self" ? "Self-Guided" :
+                    programQuery.data.planCode === "group" ? "Group" :
+                    programQuery.data.planCode === "group-plus" ? "Group Plus" :
+                    programQuery.data.pricingModel || "Online membership"}
+                </p>
+              </div>
+              <div className="rounded-xl bg-slate-50 p-4 sm:col-span-2">
+                <p className="text-sm text-slate-500">Membership Validity</p>
+                <p className="mt-2 font-semibold text-[#12395B]">
+                  {programQuery.data.startDate ? new Date(`${programQuery.data.startDate}T00:00:00`).toLocaleDateString("en-IN", {day: "numeric", month: "short", year: "numeric"}) : "Not set"} – {programQuery.data.endDate ? new Date(`${programQuery.data.endDate}T00:00:00`).toLocaleDateString("en-IN", {day: "numeric", month: "short", year: "numeric"}) : "Ongoing"}
+                </p>
+              </div>
+            </div>
+          ) : null}
 
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <div className="rounded-xl bg-slate-50 p-4">

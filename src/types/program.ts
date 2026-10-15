@@ -5,10 +5,13 @@ export type ProgramSummary = {
   startDate: string | null;
   endDate: string | null;
 
-  currentWeek: number;
-  totalWeeks: number;
+  currentWeek: number | null;
+  totalWeeks: number | null;
 
-  completionPercentage: number;
+  completionPercentage: number | null;
+  pricingModel?: string | null;
+  planCode?: string | null;
+  participationMode?: "Ongoing" | "Finite";
   sessionsCompleted: number;
   attendancePercentage: number;
 

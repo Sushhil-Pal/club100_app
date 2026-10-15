@@ -9,6 +9,7 @@ import {
 import PageContainer from "../components/layout/PageContainer";
 import AssessmentJourneyCard from "../components/assessment/AssessmentJourneyCard";
 import SelfWorkoutSummary from "../components/self/SelfWorkoutSummary";
+import SelfNextWorkout from "../components/self/SelfNextWorkout";
 
 import {
   getAssessmentContext,
@@ -271,7 +272,6 @@ export default function DashboardPage() {
   return (
     <PageContainer>
       <div className="space-y-6">
-        {isSelfPlan && assessmentContext?.enrollment?.id && <SelfWorkoutSummary enrollmentId={assessmentContext.enrollment.id} compact />}
         {/* --------------------------------------------------
             Greeting
         -------------------------------------------------- */}
@@ -290,7 +290,11 @@ export default function DashboardPage() {
             Next Session / Guided Workout
         -------------------------------------------------- */}
 
-        {nextSession ? (
+        {isSelfPlan && assessmentContext?.enrollment?.id ? (
+          <SelfNextWorkout enrollmentId={assessmentContext.enrollment.id} />
+        ) : isSelfPlan ? (
+          <section className="rounded-2xl bg-white p-6 shadow-sm text-red-700">Active Self enrollment not found.</section>
+        ) : nextSession ? (
           <section className="rounded-2xl bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between gap-4">
               <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
@@ -481,11 +485,7 @@ export default function DashboardPage() {
 
                 <div className="mt-3 flex flex-wrap gap-2">
                   <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-[#2F80ED]">
-                    {assessmentContext.plan.name}
-                  </span>
-
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-600">
-                    Guided Workouts
+                    Self-Guided
                   </span>
                 </div>
 
@@ -510,6 +510,12 @@ export default function DashboardPage() {
                   {program.name}
                 </h2>
 
+                {program.pricingModel === "Society Batch" ? (
+                  <p className="mt-4 text-sm text-slate-600">
+                    Onsite training · Ongoing participation
+                  </p>
+                ) : (
+                  <>
                 <div className="mt-5 flex items-center justify-between text-sm">
                   <span className="text-slate-600">
                     Week{" "}
@@ -520,7 +526,7 @@ export default function DashboardPage() {
 
                 <span className="font-semibold text-[#2F80ED]">
                   {
-                    program.completionPercentage
+                    program.completionPercentage ?? 0
                   }
                   %
                 </span>
@@ -532,7 +538,7 @@ export default function DashboardPage() {
                   style={{
                     width: `${Math.min(
                       Math.max(
-                        program.completionPercentage,
+                        program.completionPercentage ?? 0,
                         0
                       ),
                       100
@@ -540,6 +546,9 @@ export default function DashboardPage() {
                   }}
                 />
               </div>
+
+                  </>
+                )}
 
               <div className="mt-5 grid grid-cols-2 gap-4">
                 <div className="rounded-xl bg-slate-50 p-4">
@@ -550,7 +559,7 @@ export default function DashboardPage() {
                   </p>
 
                   <p className="mt-1 text-sm text-slate-500">
-                    Sessions completed
+                    Sessions attended
                   </p>
                 </div>
 
@@ -563,7 +572,7 @@ export default function DashboardPage() {
                   </p>
 
                   <p className="mt-1 text-sm text-slate-500">
-                    Attendance
+                    {program.pricingModel === "Society Batch" ? "Recorded attendance" : "Attendance"}
                   </p>
                 </div>
               </div>
@@ -886,11 +895,13 @@ export default function DashboardPage() {
         </section>
         )}
 
+        {isSelfPlan && assessmentContext?.enrollment?.id && <SelfWorkoutSummary enrollmentId={assessmentContext.enrollment.id} compact />}
+
         {/* --------------------------------------------------
             Quick Actions
         -------------------------------------------------- */}
 
-        <section>
+        <section className="lg:hidden">
           <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
             Quick Actions
           </p>

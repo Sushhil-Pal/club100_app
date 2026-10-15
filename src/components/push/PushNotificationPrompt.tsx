@@ -259,9 +259,7 @@ export default function PushNotificationPrompt() {
             <p className="mt-1 text-sm text-slate-600">
               Allow notifications for
               Club100 in your browser
-              settings to receive session
-              reminders and important
-              updates.
+              settings to receive workout and session reminders and important updates.
             </p>
           </div>
         </div>
@@ -283,9 +281,7 @@ export default function PushNotificationPrompt() {
             </p>
 
             <p className="mt-1 text-sm text-slate-600">
-              Get reminders for upcoming
-              sessions and important
-              Club100 updates.
+              Get reminders for your workouts, sessions and important Club100 updates.
             </p>
 
             {error && (

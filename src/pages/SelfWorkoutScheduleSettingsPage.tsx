@@ -6,7 +6,15 @@ import {getSelfScheduleSettings, reviseSelfSchedule, setInitialSelfSchedule} fro
 import type {SelfScheduleSlot} from "../services/selfWorkoutService";
 
 const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-const normalized = (t: string) => (t || "07:00").slice(0,5).padStart(5,"0");
+const normalized = (raw: string) => {
+  const value = String(raw ?? "").trim();
+  const match = /^(\d{1,2}):(\d{2})(?::\d{2}(?:\.\d+)?)?$/.exec(value);
+  if (!match) return "";
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours > 23 || minutes > 59) return "";
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+};
 
 export default function SelfWorkoutScheduleSettingsPage() {
   const {enrollmentId} = useParams();
@@ -29,6 +37,7 @@ export default function SelfWorkoutScheduleSettingsPage() {
       if(!query.data) throw new Error("Schedule settings unavailable");
       if(slots.length!==query.data.workoutsPerWeek) throw new Error(`Choose exactly ${query.data.workoutsPerWeek} days`);
       if(new Set(slots.map(x=>x.weekday)).size!==slots.length) throw new Error("Duplicate weekday");
+      if(slots.some(s=>!normalized(s.start_time))) throw new Error("Set a valid time for every selected day");
       if(!query.data.configured) return setInitialSelfSchedule(enrollmentId!,slots);
       if(effective < query.data.earliestChangeDate) throw new Error("Changes must start on a future date");
       const last = query.data.pendingRevisions.at(-1)?.effectiveFrom;
@@ -65,7 +74,7 @@ export default function SelfWorkoutScheduleSettingsPage() {
           <p className="text-sm text-slate-500">Previous workouts are preserved. Changes apply to future workout dates only.</p></div>:<p className="text-sm text-slate-500">Set up your weekly routine to see your guided workouts.</p>}
         {query.data.pendingRevisions.length>0&&<div className="rounded-lg bg-blue-50 p-3 text-sm text-slate-700"><p className="font-semibold">Upcoming changes</p>{query.data.pendingRevisions.map(r=><p key={r.effectiveFrom}>Effective {r.effectiveFrom}: {r.slots.map(s=>`${s.weekday} ${normalized(s.start_time)}`).join(", ")}</p>)}</div>}
         {error&&<p role="alert" className="text-sm text-red-700">{error}</p>}
-        <button type="button" disabled={mutation.isPending || slots.length!==query.data.workoutsPerWeek} onClick={()=>{setError("");mutation.mutate()}} className="rounded-xl bg-[#2F80ED] px-5 py-3 font-semibold text-white disabled:opacity-50">{mutation.isPending?"Saving...":query.data.configured?"Schedule Future Change":"Save Workout Schedule"}</button>
+        <button type="button" disabled={mutation.isPending || slots.length!==query.data.workoutsPerWeek || slots.some(s=>!normalized(s.start_time))} onClick={()=>{setError("");mutation.mutate()}} className="rounded-xl bg-[#2F80ED] px-5 py-3 font-semibold text-white disabled:opacity-50">{mutation.isPending?"Saving...":query.data.configured?"Schedule Future Change":"Save Workout Schedule"}</button>
       </section>
     </>}
   </div></PageContainer>;

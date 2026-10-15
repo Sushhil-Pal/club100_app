@@ -19,6 +19,7 @@ import {
   cancelTrainerSession,
   completeTrainerSession,
   getTrainerSessionDetail,
+  updateTrainerSessionPreparation,
   saveTrainerSessionAttendance,
   startTrainerSession,
   type SaveSessionAttendanceInput,
@@ -75,6 +76,43 @@ function StatusButton({
       {label}
     </button>
   );
+}
+
+function SessionPreparationEditor({sessionId, data, onSaved}: {
+  sessionId: string;
+  data: import("../../services/trainerService").TrainerSessionDetail["session"];
+  onSaved: () => void;
+}) {
+  const [format, setFormat] = useState(data.workoutFormat || data.preparation.format || "");
+  const [override, setOverride] = useState(data.itemsToBringOverride || "");
+  const [instructions, setInstructions] = useState(data.additionalInstructions || "");
+  const mutation = useMutation({
+    mutationFn: () => updateTrainerSessionPreparation(sessionId, {
+      workout_format: format, items_to_bring_override: override,
+      additional_instructions: instructions,
+    }),
+    onSuccess: onSaved,
+  });
+  return <section className="mt-5 rounded-2xl bg-white p-5 shadow-sm">
+    <h2 className="text-lg font-bold text-[#12395B]">Workout Preparation</h2>
+    <label className="mt-4 block text-sm font-semibold">Workout Format
+      <select className="mt-1 block w-full rounded-lg border p-2" value={format} onChange={e => setFormat(e.target.value)}>
+        <option value="">Choose format</option>
+        {["Power","Flow","Pulse","Play"].map(v => <option key={v} value={v}>{v}</option>)}
+      </select>
+    </label>
+    <p className="mt-3 text-sm text-slate-600">Standard items: {data.preparation.itemsToBring.join(", ") || "Not configured"}</p>
+    <label className="mt-3 block text-sm font-semibold">Items to Bring Override (one per line; blank uses defaults)
+      <textarea className="mt-1 block w-full rounded-lg border p-2" rows={3} value={override} onChange={e => setOverride(e.target.value)}/>
+    </label>
+    <label className="mt-3 block text-sm font-semibold">Additional Preparation Instructions
+      <textarea className="mt-1 block w-full rounded-lg border p-2" rows={3} value={instructions} onChange={e => setInstructions(e.target.value)}/>
+    </label>
+    <button type="button" disabled={!format || mutation.isPending} onClick={() => mutation.mutate()}
+      className="mt-4 rounded-lg bg-[#2F80ED] px-4 py-2 text-white disabled:opacity-50">Save Preparation</button>
+    {mutation.isError && <p className="mt-2 text-sm text-red-700">{mutation.error.message}</p>}
+    {mutation.isSuccess && <p className="mt-2 text-sm text-green-700">Saved.</p>}
+  </section>;
 }
 
 export default function TrainerSessionDetailPage() {
@@ -533,6 +571,11 @@ export default function TrainerSessionDetailPage() {
 
   return (
     <div>
+      {session.status !== "Completed" && session.status !== "Cancelled" && (
+        <SessionPreparationEditor key={session.id + (session.workoutFormat || "")} sessionId={session.id} data={session}
+          onSaved={() => { void queryClient.invalidateQueries({queryKey:["trainer-session",sessionId]}); }} />
+      )}
+
       {/* Header */}
 
       <div className="rounded-2xl bg-white p-5 shadow-sm">

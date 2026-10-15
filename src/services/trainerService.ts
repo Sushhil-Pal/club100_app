@@ -442,6 +442,17 @@ export type TrainerSessionDetail = {
     meetingUrl: string | null;
 
     notes: string | null;
+    workoutFormat: string | null;
+    itemsToBringOverride: string | null;
+    additionalInstructions: string | null;
+    preparation: {
+      format: string | null;
+      description: string | null;
+      itemsToBring: string[];
+      preparationInstructions: string | null;
+      additionalInstructions: string | null;
+      hasOverride: boolean;
+    };
 
     attendanceSynced: boolean;
 
@@ -715,4 +726,13 @@ export async function cancelTrainerSession(
         sessionId,
     }
   );
+}
+
+export function updateTrainerSessionPreparation(
+  sessionId: string,
+  payload: {workout_format: string; items_to_bring_override: string; additional_instructions: string}
+): Promise<{success: boolean}> {
+  return apiPost("/api/method/club100_core.api.trainer.update_session_preparation", {
+    session_id: sessionId, ...payload,
+  });
 }

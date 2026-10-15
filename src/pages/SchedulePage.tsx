@@ -312,6 +312,10 @@ function SessionCard({
               </p>
             )}
 
+            {!isSelfGuided && session.workoutFormat && (
+              <p><span className="text-slate-400">Workout Format: </span>{session.workoutFormat}</p>
+            )}
+
             {!isSelfGuided &&
               session.cohort
                 ?.fitnessLevel && (

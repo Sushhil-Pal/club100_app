@@ -273,6 +273,8 @@ export type MemberScheduleSession = {
     name: string;
   } | null;
 
+  workoutFormat: string | null;
+
   workout: {
     id: string;
     title: string;
@@ -361,6 +363,15 @@ export type MemberSessionDetail = {
 
     notes:
       string | null;
+
+    preparation: {
+      format: string | null;
+      description: string | null;
+      itemsToBring: string[];
+      preparationInstructions: string | null;
+      additionalInstructions: string | null;
+      hasOverride: boolean;
+    } | null;
 
     contentAccess:
       MemberContentAccess | null;

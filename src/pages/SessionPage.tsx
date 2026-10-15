@@ -651,12 +651,13 @@ export default function SessionPage() {
             <div className="space-y-6">
               {/* Today's workout */}
 
+              {session.workoutContent && (
               <section className="rounded-2xl border border-white/10 bg-white/[0.06] p-6">
                 <p className="text-xs font-semibold uppercase tracking-wide text-[#2F80ED]">
                   Today&apos;s Workout
                 </p>
 
-                {session.workoutContent ? (
+                {(
                   <div className="mt-4">
                     {/* Header */}
 
@@ -794,14 +795,36 @@ export default function SessionPage() {
                       ) : null}
                     </div>
                   </div>
-                ) : (
-                  <div className="mt-5 rounded-xl bg-white/5 p-5">
-                    <p className="text-sm leading-6 text-slate-400">
-                      Your trainer will guide you through today&apos;s workout during the live session.
-                    </p>
-                  </div>
                 )}
               </section>
+              )}
+
+              {/* Standard preparation for trainer-led sessions */}
+              {!isSelfGuided && session.preparation && (
+                <section className="rounded-2xl border border-white/10 bg-white/[0.06] p-6">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#2F80ED]">Workout Format</p>
+                  <h2 className="mt-2 text-xl font-bold text-white">{session.preparation.format || "Format to be confirmed"}</h2>
+                  {session.preparation.description && <p className="mt-1 text-sm text-slate-300">{session.preparation.description}</p>}
+                  <h3 className="mt-5 text-sm font-semibold text-white">What to Bring</h3>
+                  {session.preparation.itemsToBring.length ? (
+                    <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-slate-300">
+                      {session.preparation.itemsToBring.map((item, index) => <li key={index}>{item}</li>)}
+                    </ul>
+                  ) : <p className="mt-2 text-sm text-slate-400">Preparation details will be shared by your trainer.</p>}
+                  {session.preparation.preparationInstructions && (
+                    <div className="mt-5 border-t border-white/10 pt-4">
+                      <h3 className="text-sm font-semibold text-white">Preparation Guidance</h3>
+                      <p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-300">{session.preparation.preparationInstructions}</p>
+                    </div>
+                  )}
+                  {session.preparation.additionalInstructions && (
+                    <div className="mt-5 rounded-xl border border-blue-400/20 bg-[#2F80ED]/10 p-4">
+                      <h3 className="text-sm font-semibold text-blue-200">Additional Trainer Instructions</h3>
+                      <p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-200">{session.preparation.additionalInstructions}</p>
+                    </div>
+                  )}
+                </section>
+              )}
 
               {/* Trainer notes */}
 

@@ -58,13 +58,36 @@ export default function SelfWorkoutScheduleSettingsPage() {
     setSlots(prev=>prev.some(x=>x.weekday===day)?prev.filter(x=>x.weekday!==day):[...prev,{weekday:day,start_time:"07:00"}]);
   }
   function changeTime(day:string, t:string){setSlots(prev=>prev.map(x=>x.weekday===day?{...x,start_time:t}:x));}
+  const requiredDays = query.data?.workoutsPerWeek ?? 0;
+  const remainingDays = Math.max(0, requiredDays - slots.length);
+  const validTimes = slots.every(s => Boolean(normalized(s.start_time)));
+  const scheduleComplete = Boolean(query.data) && slots.length === requiredDays && validTimes;
   return <PageContainer><div className="space-y-6">
     <Link to="/schedule" className="text-sm font-semibold text-[#2F80ED]">← Back to Schedule</Link>
     <header><h1 className="text-3xl font-bold text-[#12395B]">Your Workout Schedule</h1>
       <p className="mt-2 text-slate-600">Choose your recurring workout days and a different time for each day.</p></header>
     {query.isPending?<p>Loading schedule...</p>:query.isError?<p className="rounded-xl bg-red-50 p-5 text-red-700">{query.error.message}</p>:query.data&&<>
       <section className="rounded-2xl bg-white p-5 shadow-sm space-y-4">
-        <p className="font-semibold">Select exactly {query.data.workoutsPerWeek} different days ({slots.length} selected)</p>
+        <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
+          <p className="font-semibold text-[#12395B]">Choose your {requiredDays} workout days</p>
+          <p className="mt-1 text-sm text-slate-700">
+            Your Self plan includes {requiredDays} guided workouts each week. Select exactly {requiredDays} different days and choose a preferred time for each day.
+          </p>
+          <div className="mt-3 flex items-center justify-between gap-3 text-sm">
+            <span className="font-medium text-slate-700">Days selected</span>
+            <span className={scheduleComplete ? "font-semibold text-green-700" : "font-semibold text-[#12395B]"}>
+              {slots.length} of {requiredDays}
+            </span>
+          </div>
+          <p role="status" aria-live="polite" className={`mt-1 text-sm ${scheduleComplete ? "text-green-700" : "text-slate-700"}`}>
+            {remainingDays > 0
+              ? `Select ${remainingDays} more ${remainingDays === 1 ? "day" : "days"} to continue.`
+              : !validTimes
+                ? "Choose a valid time for every selected day."
+                : "Weekly schedule complete. You're ready to save."}
+          </p>
+        </div>
+        <p className="font-semibold">Select exactly {requiredDays} different days</p>
         {WEEKDAYS.map(day=>{const slot=slots.find(s=>s.weekday===day);return <div key={day} className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
           <label className="flex items-center gap-3"><input type="checkbox" checked={!!slot} onChange={()=>toggle(day)} disabled={!slot && slots.length>=query.data!.workoutsPerWeek}/><span>{day}</span></label>
           {slot&&<input aria-label={`${day} start time`} type="time" value={normalized(slot.start_time)} onChange={e=>changeTime(day,e.target.value)} className="rounded-lg border border-slate-300 p-2"/>}
@@ -74,7 +97,7 @@ export default function SelfWorkoutScheduleSettingsPage() {
           <p className="text-sm text-slate-500">Previous workouts are preserved. Changes apply to future workout dates only.</p></div>:<p className="text-sm text-slate-500">Set up your weekly routine to see your guided workouts.</p>}
         {query.data.pendingRevisions.length>0&&<div className="rounded-lg bg-blue-50 p-3 text-sm text-slate-700"><p className="font-semibold">Upcoming changes</p>{query.data.pendingRevisions.map(r=><p key={r.effectiveFrom}>Effective {r.effectiveFrom}: {r.slots.map(s=>`${s.weekday} ${normalized(s.start_time)}`).join(", ")}</p>)}</div>}
         {error&&<p role="alert" className="text-sm text-red-700">{error}</p>}
-        <button type="button" disabled={mutation.isPending || slots.length!==query.data.workoutsPerWeek || slots.some(s=>!normalized(s.start_time))} onClick={()=>{setError("");mutation.mutate()}} className="rounded-xl bg-[#2F80ED] px-5 py-3 font-semibold text-white disabled:opacity-50">{mutation.isPending?"Saving...":query.data.configured?"Schedule Future Change":"Save Workout Schedule"}</button>
+        <button type="button" disabled={mutation.isPending || !scheduleComplete} onClick={()=>{setError("");mutation.mutate()}} className="rounded-xl bg-[#2F80ED] px-5 py-3 font-semibold text-white disabled:opacity-50">{mutation.isPending?"Saving...":query.data.configured?"Schedule Future Change":"Save Workout Schedule"}</button>
       </section>
     </>}
   </div></PageContainer>;

@@ -9,7 +9,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import PageContainer from "../components/layout/PageContainer";
 
@@ -20,6 +20,7 @@ import {
 
 import { logout } from "../services/authService";
 import { getCurrentProgram } from "../services/programService";
+import { useMembershipSelection } from "../context/MembershipContext";
 
 import {
   disablePushNotifications,
@@ -36,6 +37,7 @@ import {
 export default function ProfilePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { selectedEnrollmentId, loading: membershipLoading } = useMembershipSelection();
 
   const memberQuery = useQuery({
     queryKey: ["current-member"],
@@ -43,8 +45,9 @@ export default function ProfilePage() {
   });
 
   const programQuery = useQuery({
-    queryKey: ["current-program"],
-    queryFn: getCurrentProgram,
+    queryKey: ["current-program", selectedEnrollmentId],
+    queryFn: () => getCurrentProgram(selectedEnrollmentId),
+    enabled: !membershipLoading,
   });
 
   const [fullName, setFullName] =
@@ -288,6 +291,7 @@ export default function ProfilePage() {
 
   return (
     <PageContainer>
+      <div className="mb-5"><Link to="/my-purchases" className="inline-block rounded-xl border border-teal-700 px-4 py-2 font-semibold text-teal-700">My purchases &amp; upcoming memberships →</Link></div>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-[#12395B] md:text-4xl">

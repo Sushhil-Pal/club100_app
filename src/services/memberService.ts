@@ -322,9 +322,9 @@ export type MemberSchedule = {
     MemberScheduleSession[];
 };
 
-export async function getMemberSchedule(): Promise<MemberSchedule> {
+export async function getMemberSchedule(enrollmentId?: string | null): Promise<MemberSchedule> {
   return apiGet<MemberSchedule>(
-    "/api/method/club100_core.api.member.schedule"
+    "/api/method/club100_core.api.member.schedule" + (enrollmentId ? `?enrollment_id=${encodeURIComponent(enrollmentId)}` : "")
   );
 }
 
@@ -462,7 +462,8 @@ export type MemberSessionDetail = {
 };
 
 export async function getMemberSessionDetail(
-  sessionId: string
+  sessionId: string,
+  enrollmentId?: string | null
 ): Promise<MemberSessionDetail> {
   const params =
     new URLSearchParams();
@@ -471,6 +472,8 @@ export async function getMemberSessionDetail(
     "session_id",
     sessionId
   );
+
+  if (enrollmentId) params.set("enrollment_id", enrollmentId);
 
   return apiGet<MemberSessionDetail>(
     `/api/method/club100_core.api.member.session_detail?${params.toString()}`
@@ -486,6 +489,7 @@ export type MemberAssessmentContext = {
   reason?: string | null;
 
   assessmentMode?: string | null;
+  isFreeBaseline?: boolean;
   state?: "Not Started" | "Draft" | "Current" | "Due" | string;
   canStart?: boolean;
   assessmentType?: "Baseline" | "Reassessment" | string;
@@ -494,8 +498,8 @@ export type MemberAssessmentContext = {
 
   latestAssessment?: {
     id: string;
-    type: string;
-    mode: string;
+    type?: string;
+    mode?: string;
     date: string;
     fitnessScore: number | null;
     fitnessLevel: string | null;
@@ -612,28 +616,32 @@ export type StartSelfAssessmentResponse = {
   resumed: boolean;
 };
 
-export async function getAssessmentContext(): Promise<MemberAssessmentContext> {
+export async function getAssessmentContext(enrollmentId?: string | null): Promise<MemberAssessmentContext> {
   return apiGet<MemberAssessmentContext>(
-    "/api/method/club100_core.api.member.assessment_context"
+    "/api/method/club100_core.api.member.assessment_context" + (enrollmentId ? `?enrollment_id=${encodeURIComponent(enrollmentId)}` : "")
   );
 }
 
 export async function startSelfAssessment(
-  safetyAcknowledged: boolean
+  safetyAcknowledged: boolean,
+  enrollmentId?: string | null
 ): Promise<StartSelfAssessmentResponse> {
   return apiPost<StartSelfAssessmentResponse>(
     "/api/method/club100_core.api.member.start_self_assessment",
     {
       safety_acknowledged: safetyAcknowledged ? 1 : 0,
+      ...(enrollmentId ? { enrollment_id: enrollmentId } : {}),
     }
   );
 }
 
 export async function getSelfAssessment(
-  assessmentId: string
+  assessmentId: string,
+  enrollmentId?: string | null
 ): Promise<MemberSelfAssessmentDetail> {
   const params = new URLSearchParams();
   params.set("assessment_id", assessmentId);
+  if (enrollmentId) params.set("enrollment_id", enrollmentId);
 
   return apiGet<MemberSelfAssessmentDetail>(
     `/api/method/club100_core.api.member.self_assessment_detail?${params.toString()}`
@@ -642,26 +650,65 @@ export async function getSelfAssessment(
 
 export async function saveSelfAssessment(
   assessmentId: string,
-  inputs: MemberSelfAssessmentSaveInput[]
+  inputs: MemberSelfAssessmentSaveInput[],
+  enrollmentId?: string | null
 ): Promise<MemberSelfAssessmentSaveResponse> {
   return apiPost<MemberSelfAssessmentSaveResponse>(
     "/api/method/club100_core.api.member.save_self_assessment",
     {
       assessment_id: assessmentId,
       inputs,
+      ...(enrollmentId ? { enrollment_id: enrollmentId } : {}),
     }
   );
 }
 
 export async function completeSelfAssessment(
   assessmentId: string,
-  inputs: MemberSelfAssessmentSaveInput[]
+  inputs: MemberSelfAssessmentSaveInput[],
+  enrollmentId?: string | null
 ): Promise<MemberSelfAssessmentSaveResponse> {
   return apiPost<MemberSelfAssessmentSaveResponse>(
     "/api/method/club100_core.api.member.complete_self_assessment",
     {
       assessment_id: assessmentId,
       inputs,
+      ...(enrollmentId ? { enrollment_id: enrollmentId } : {}),
     }
+  );
+}
+
+// Free baseline assessment: independent of enrollment and paid Self assessment.
+export async function getFreeAssessmentContext(): Promise<MemberAssessmentContext> {
+  return apiGet<MemberAssessmentContext>(
+    "/api/method/club100_core.api.free_assessment.free_assessment_context"
+  );
+}
+
+export async function startFreeAssessment(safetyAcknowledged: boolean): Promise<StartSelfAssessmentResponse> {
+  return apiPost<StartSelfAssessmentResponse>(
+    "/api/method/club100_core.api.free_assessment.start_free_assessment",
+    { safety_acknowledged: safetyAcknowledged ? 1 : 0 }
+  );
+}
+
+export async function getFreeAssessment(assessmentId: string): Promise<MemberSelfAssessmentDetail> {
+  const params = new URLSearchParams({ assessment_id: assessmentId });
+  return apiGet<MemberSelfAssessmentDetail>(
+    `/api/method/club100_core.api.free_assessment.free_assessment_detail?${params.toString()}`
+  );
+}
+
+export async function saveFreeAssessment(assessmentId: string, inputs: MemberSelfAssessmentSaveInput[]): Promise<MemberSelfAssessmentSaveResponse> {
+  return apiPost<MemberSelfAssessmentSaveResponse>(
+    "/api/method/club100_core.api.free_assessment.save_free_assessment",
+    { assessment_id: assessmentId, inputs }
+  );
+}
+
+export async function completeFreeAssessment(assessmentId: string, inputs: MemberSelfAssessmentSaveInput[]): Promise<MemberSelfAssessmentSaveResponse> {
+  return apiPost<MemberSelfAssessmentSaveResponse>(
+    "/api/method/club100_core.api.free_assessment.complete_free_assessment",
+    { assessment_id: assessmentId, inputs }
   );
 }

@@ -1,3 +1,4 @@
+import MembershipSelector from "../navigation/MembershipSelector";
 import {
   Outlet,
 } from "react-router-dom";
@@ -29,6 +30,7 @@ export default function AppShell() {
 
           <PushNotificationPrompt />
 
+          <div className="mb-4 md:hidden"><MembershipSelector /></div>
           <Outlet />
         </main>
       </div>

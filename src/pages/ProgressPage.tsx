@@ -1,3 +1,4 @@
+import { useMembershipSelection } from "../context/MembershipContext";
 import {
   useNavigate,
 } from "react-router-dom";
@@ -48,6 +49,7 @@ function ChangeBadge({
 }
 
 export default function ProgressPage() {
+ const {selectedEnrollmentId}=useMembershipSelection();
   const navigate =
     useNavigate();
 
@@ -64,11 +66,10 @@ export default function ProgressPage() {
   const assessmentContextQuery =
     useQuery({
       queryKey: [
-        "member-assessment-context",
+        "member-assessment-context", selectedEnrollmentId,
       ],
 
-      queryFn:
-        getAssessmentContext,
+      queryFn:()=>getAssessmentContext(selectedEnrollmentId),
     });
 
   if (
@@ -127,7 +128,6 @@ export default function ProgressPage() {
   return (
     <PageContainer>
       <div className="space-y-6">
-        {assessmentContext?.plan?.code === "self" && assessmentContext.enrollment?.id && <SelfWorkoutSummary enrollmentId={assessmentContext.enrollment.id} />}
         {/* Header */}
 
         <div>
@@ -139,6 +139,8 @@ export default function ProgressPage() {
             See how your fitness is improving over time.
           </p>
         </div>
+
+        {assessmentContext?.plan?.code === "self" && assessmentContext.enrollment?.id && <SelfWorkoutSummary enrollmentId={assessmentContext.enrollment.id} />}
 
         {!progress.hasAssessment ? (
           hasSelfAssessmentJourney &&

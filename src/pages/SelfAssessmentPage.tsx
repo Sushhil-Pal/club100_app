@@ -12,10 +12,12 @@ import {
 
 import {
   useNavigate,
+  useLocation,
   useParams,
 } from "react-router-dom";
 
 import PageContainer from "../components/layout/PageContainer";
+import { useMembershipSelection } from "../context/MembershipContext";
 import AssessmentInputField, {
   isAssessmentInputEmpty,
   type AssessmentInputState,
@@ -23,6 +25,9 @@ import AssessmentInputField, {
 
 import {
   completeSelfAssessment,
+  completeFreeAssessment,
+  getFreeAssessment,
+  saveFreeAssessment,
   getSelfAssessment,
   saveSelfAssessment,
   type MemberSelfAssessmentInput,
@@ -263,7 +268,10 @@ function getDisplayItemEquipment(
 
 export default function SelfAssessmentPage() {
   const navigate = useNavigate();
+  const isFree = useLocation().pathname.startsWith("/free-assessment/");
+  const homePath = isFree ? "/free-assessment" : "/assessment";
   const queryClient = useQueryClient();
+  const { selectedEnrollmentId, loading: membershipLoading } = useMembershipSelection();
 
   const { assessmentId } = useParams<{
     assessmentId: string;
@@ -280,14 +288,13 @@ export default function SelfAssessmentPage() {
 
   const assessmentQuery = useQuery({
     queryKey: [
-      "member-self-assessment",
+      isFree ? "member-free-assessment" : "member-self-assessment",
       assessmentId,
+      ...(isFree ? [] : [selectedEnrollmentId]),
     ],
     queryFn: () =>
-      getSelfAssessment(
-        assessmentId!
-      ),
-    enabled: !!assessmentId,
+      isFree ? getFreeAssessment(assessmentId!) : getSelfAssessment(assessmentId!, selectedEnrollmentId),
+    enabled: !!assessmentId && (isFree || (!membershipLoading && !!selectedEnrollmentId)),
   });
 
   useEffect(() => {
@@ -421,14 +428,12 @@ export default function SelfAssessmentPage() {
       const payload = buildPayload();
 
       return action === "Completed"
-        ? completeSelfAssessment(
-            assessmentId!,
-            payload
-          )
-        : saveSelfAssessment(
-            assessmentId!,
-            payload
-          );
+        ? (isFree
+            ? completeFreeAssessment(assessmentId!, payload)
+            : completeSelfAssessment(assessmentId!, payload, selectedEnrollmentId))
+        : (isFree
+            ? saveFreeAssessment(assessmentId!, payload)
+            : saveSelfAssessment(assessmentId!, payload, selectedEnrollmentId));
     },
 
     onSuccess: async (response) => {
@@ -437,13 +442,14 @@ export default function SelfAssessmentPage() {
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: [
-            "member-self-assessment",
+            isFree ? "member-free-assessment" : "member-self-assessment",
             assessmentId,
+            ...(isFree ? [] : [selectedEnrollmentId]),
           ],
         }),
         queryClient.invalidateQueries({
           queryKey: [
-            "member-assessment-context",
+            isFree ? "free-assessment-context" : "member-assessment-context",
           ],
         }),
         queryClient.invalidateQueries({
@@ -491,7 +497,7 @@ export default function SelfAssessmentPage() {
           <button
             type="button"
             onClick={() =>
-              navigate("/assessment")
+              navigate(homePath)
             }
             className="mt-4 text-sm font-semibold text-[#2F80ED]"
           >
@@ -521,7 +527,7 @@ export default function SelfAssessmentPage() {
           <button
             type="button"
             onClick={() =>
-              navigate("/assessment")
+              navigate(homePath)
             }
             className="text-sm font-semibold text-[#2F80ED]"
           >

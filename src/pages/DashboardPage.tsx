@@ -1,3 +1,4 @@
+import { useMembershipSelection } from "../context/MembershipContext";
 import {
   useQuery,
 } from "@tanstack/react-query";
@@ -7,6 +8,8 @@ import {
 } from "react-router-dom";
 
 import PageContainer from "../components/layout/PageContainer";
+import AssessmentOnlyDashboardPage from "./AssessmentOnlyDashboardPage";
+import { getMyPurchases } from "../services/purchaseHistoryService";
 import AssessmentJourneyCard from "../components/assessment/AssessmentJourneyCard";
 import SelfWorkoutSummary from "../components/self/SelfWorkoutSummary";
 import SelfNextWorkout from "../components/self/SelfNextWorkout";
@@ -101,7 +104,8 @@ function getGreeting() {
   return "Good evening";
 }
 
-export default function DashboardPage() {
+function EnrolledDashboardPage() {
+  const {selectedEnrollmentId}=useMembershipSelection();
   // ---------------------------------------------------------
   // Queries
   // ---------------------------------------------------------
@@ -119,21 +123,19 @@ export default function DashboardPage() {
   const programQuery =
     useQuery({
       queryKey: [
-        "current-program",
+        "current-program", selectedEnrollmentId,
       ],
 
-      queryFn:
-        getCurrentProgram,
+      queryFn:()=>getCurrentProgram(selectedEnrollmentId),
     });
 
   const scheduleQuery =
     useQuery({
       queryKey: [
-        "member-schedule",
+        "member-schedule", selectedEnrollmentId,
       ],
 
-      queryFn:
-        getMemberSchedule,
+      queryFn:()=>getMemberSchedule(selectedEnrollmentId),
 
       refetchInterval:
         30000,
@@ -152,11 +154,10 @@ export default function DashboardPage() {
   const assessmentContextQuery =
     useQuery({
       queryKey: [
-        "member-assessment-context",
+        "member-assessment-context", selectedEnrollmentId,
       ],
 
-      queryFn:
-        getAssessmentContext,
+      queryFn:()=>getAssessmentContext(selectedEnrollmentId),
     });
 
   // ---------------------------------------------------------
@@ -952,4 +953,43 @@ export default function DashboardPage() {
       </div>
     </PageContainer>
   );
+}
+
+// Enrollment-aware entry point: do not request enrolled-only dashboard data
+// for assessment-only members. Existing enrolled dashboard remains unchanged.
+export default function DashboardPage() {
+  const purchases = useQuery({queryKey:["my-purchases"],queryFn:getMyPurchases,refetchInterval:60_000});
+  const scheduled = purchases.data?.purchases.find(p => p.status === "Scheduled" && p.paymentStatus === "Paid");
+  const banner = scheduled ? <div className="mx-auto w-full max-w-6xl px-4 pt-5"><div className="rounded-2xl border border-teal-200 bg-teal-50 p-4 text-teal-950"><strong>Paid membership scheduled</strong><p className="mt-1 text-sm">{scheduled.program} Self membership begins {scheduled.startDate}. Your remaining trial days are preserved.</p><Link className="mt-2 inline-block text-sm font-semibold text-teal-700 underline" to="/my-purchases">View purchase details →</Link></div></div> : null;
+  const {selectedEnrollmentId,loading,error}=useMembershipSelection();
+  const programQuery = useQuery({
+    queryKey: ["current-program"],
+    queryFn:()=>getCurrentProgram(selectedEnrollmentId),
+  });
+
+  if (loading || programQuery.isLoading) {
+    return (
+      <PageContainer>
+        <div className="rounded-2xl bg-white p-6 shadow-sm text-slate-600">
+          Loading your Club100 dashboard...
+        </div>
+      </PageContainer>
+    );
+  }
+
+  if (error || programQuery.isError) {
+    return (
+      <PageContainer>
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">
+          We couldn't load your membership details. Please try again.
+        </div>
+      </PageContainer>
+    );
+  }
+
+  if (!programQuery.data) {
+    return <>{banner}<AssessmentOnlyDashboardPage /></>;
+  }
+
+  return <>{banner}<EnrolledDashboardPage /></>;
 }

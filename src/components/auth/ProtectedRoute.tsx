@@ -53,7 +53,7 @@ export default function ProtectedRoute({
   ) {
     return (
       <Navigate
-        to="/login"
+        to={location.pathname === "/free-trial" ? "/register?next=%2Ffree-trial" : "/login"}
         replace
         state={{
           from: location.pathname,

@@ -4,11 +4,14 @@ import {
 } from "react";
 import {
   useMutation,
+  useQueryClient,
 } from "@tanstack/react-query";
 import {
   Link,
   useNavigate,
 } from "react-router-dom";
+
+import { captureAssessmentDestination, consumePostAuthDestination, assessmentAuthLink } from "../utils/postAuthDestination";
 
 import {
   getRegistrationContext,
@@ -20,6 +23,8 @@ const REGISTRATION_TOKEN_STORAGE_KEY =
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  captureAssessmentDestination(window.location.search);
 
   const [fullName, setFullName] =
     useState("");
@@ -130,6 +135,9 @@ export default function RegisterPage() {
       }),
 
     onSuccess: (response) => {
+      // Registration logs the member in on ERP. Discard cached Guest auth state
+      // before entering protected onboarding/trial routes.
+      queryClient.clear();
       sessionStorage.removeItem(
         REGISTRATION_TOKEN_STORAGE_KEY
       );
@@ -150,7 +158,7 @@ export default function RegisterPage() {
       }
 
       navigate(
-        "/dashboard",
+        consumePostAuthDestination(),
         {
           replace: true,
         }
@@ -231,7 +239,7 @@ export default function RegisterPage() {
             </div>
 
             <Link
-              to="/login"
+              to={assessmentAuthLink("/login")}
               className="mt-6 block w-full rounded-xl bg-[#2F80ED] px-4 py-3 text-center font-semibold text-white transition hover:bg-[#1F6FD1]"
             >
               Go to Sign In
@@ -426,7 +434,7 @@ export default function RegisterPage() {
               <p className="mt-6 text-center text-sm text-slate-500">
                 Already have an account?{" "}
                 <Link
-                  to="/login"
+                  to={assessmentAuthLink("/login")}
                   className="font-semibold text-[#2F80ED]"
                 >
                   Sign In

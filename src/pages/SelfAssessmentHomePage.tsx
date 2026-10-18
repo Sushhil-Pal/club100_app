@@ -11,12 +11,16 @@ import {
 import {
   Link,
   useNavigate,
+  useLocation,
 } from "react-router-dom";
 
 import PageContainer from "../components/layout/PageContainer";
+import { useMembershipSelection } from "../context/MembershipContext";
 
 import {
   getAssessmentContext,
+  getFreeAssessmentContext,
+  startFreeAssessment,
   startSelfAssessment,
 } from "../services/memberService";
 
@@ -41,33 +45,39 @@ function formatDate(
 
 export default function SelfAssessmentHomePage() {
   const navigate = useNavigate();
+  const isFree = useLocation().pathname.startsWith("/free-assessment");
+  const homePath = isFree ? "/free-assessment" : "/assessment";
   const queryClient = useQueryClient();
+  const { selectedEnrollmentId, loading: membershipLoading } = useMembershipSelection();
 
   const [safetyAcknowledged, setSafetyAcknowledged] =
     useState(false);
 
   const contextQuery = useQuery({
     queryKey: [
-      "member-assessment-context",
+      isFree ? "free-assessment-context" : "member-assessment-context",
+      ...(isFree ? [] : [selectedEnrollmentId]),
     ],
-    queryFn: getAssessmentContext,
+    queryFn: () => isFree ? getFreeAssessmentContext() : getAssessmentContext(selectedEnrollmentId),
+    enabled: isFree || (!membershipLoading && !!selectedEnrollmentId),
   });
 
   const startMutation = useMutation({
     mutationFn: () =>
-      startSelfAssessment(
-        safetyAcknowledged
-      ),
+      isFree
+        ? startFreeAssessment(safetyAcknowledged)
+        : startSelfAssessment(safetyAcknowledged, selectedEnrollmentId),
 
     onSuccess: async (result) => {
       await queryClient.invalidateQueries({
         queryKey: [
-          "member-assessment-context",
+          isFree ? "free-assessment-context" : "member-assessment-context",
+      ...(isFree ? [] : [selectedEnrollmentId]),
         ],
       });
 
       navigate(
-        `/assessment/${result.assessment.id}`
+        `${homePath}/${result.assessment.id}`
       );
     },
   });
@@ -163,7 +173,7 @@ export default function SelfAssessmentHomePage() {
             </div>
 
             <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-[#2F80ED]">
-              {context.plan?.name} · {context.assessmentMode}
+              {isFree ? "Free Baseline" : context.plan?.name} · {context.assessmentMode}
             </span>
           </div>
 
@@ -177,7 +187,7 @@ export default function SelfAssessmentHomePage() {
                 type="button"
                 onClick={() =>
                   navigate(
-                    `/assessment/${context.draftAssessmentId}`
+                    `${homePath}/${context.draftAssessmentId}`
                   )
                 }
                 className="mt-5 rounded-xl bg-[#2F80ED] px-5 py-3 font-semibold text-white"
@@ -249,7 +259,7 @@ export default function SelfAssessmentHomePage() {
                     {context.latestAssessment.fitnessScore ?? "—"}
                   </p>
                   <p className="mt-1 text-sm text-slate-500">
-                    {context.latestAssessment.type} · {formatDate(context.latestAssessment.date)}
+                    {context.latestAssessment.type || "Baseline"} · {formatDate(context.latestAssessment.date)}
                   </p>
 
                   <Link
@@ -265,7 +275,7 @@ export default function SelfAssessmentHomePage() {
                     Next reassessment
                   </p>
                   <p className="mt-1 text-xl font-bold text-slate-900">
-                    {formatDate(context.nextAssessmentDueOn)}
+                    {isFree ? "Available with a membership" : formatDate(context.nextAssessmentDueOn)}
                   </p>
                   <p className="mt-2 text-sm text-slate-600">
                     Reassessing regularly helps you measure meaningful progress rather than day-to-day variation.

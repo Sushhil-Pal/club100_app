@@ -1,3 +1,4 @@
+import { useMembershipSelection } from "../context/MembershipContext";
 import {
   useQuery,
 } from "@tanstack/react-query";
@@ -294,6 +295,7 @@ function WeekSessionRow({
 }
 
 export default function ProgramPage() {
+  const {selectedEnrollmentId}=useMembershipSelection();
   // ---------------------------------------------------------
   // Queries
   // ---------------------------------------------------------
@@ -301,21 +303,19 @@ export default function ProgramPage() {
   const programQuery =
     useQuery({
       queryKey: [
-        "current-program",
+        "current-program", selectedEnrollmentId,
       ],
 
-      queryFn:
-        getCurrentProgram,
+      queryFn:()=>getCurrentProgram(selectedEnrollmentId),
     });
 
   const scheduleQuery =
     useQuery({
       queryKey: [
-        "member-schedule",
+        "member-schedule", selectedEnrollmentId,
       ],
 
-      queryFn:
-        getMemberSchedule,
+      queryFn:()=>getMemberSchedule(selectedEnrollmentId),
 
       refetchInterval:
         30000,
@@ -324,11 +324,10 @@ export default function ProgramPage() {
   const assessmentContextQuery =
     useQuery({
       queryKey: [
-        "member-assessment-context",
+        "member-assessment-context", selectedEnrollmentId,
       ],
 
-      queryFn:
-        getAssessmentContext,
+      queryFn:()=>getAssessmentContext(selectedEnrollmentId),
     });
 
   // ---------------------------------------------------------

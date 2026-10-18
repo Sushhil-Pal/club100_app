@@ -1,3 +1,4 @@
+import { useMembershipSelection } from "../context/MembershipContext";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -29,11 +30,13 @@ export default function SelfWorkoutDetailPage() {
   const { id } = useParams();
   const client = useQueryClient();
   const enrollment = id?.split(":")[0];
+  const {selectedEnrollmentId, loading: membershipLoading, error: membershipError}=useMembershipSelection();
+  const permitted = !!enrollment && !membershipLoading && !membershipError && selectedEnrollmentId === enrollment;
 
   const activityQuery = useQuery({
     queryKey: ["self-workout-activity", enrollment],
     queryFn: () => getSelfWorkoutActivity(enrollment!),
-    enabled: !!enrollment,
+    enabled: permitted,
   });
   const currentActivity = activityQuery.data?.activities.find(a => a.workoutId === id);
   const refresh = () => client.invalidateQueries({ queryKey: ["self-workout-activity", enrollment] });
@@ -42,7 +45,7 @@ export default function SelfWorkoutDetailPage() {
   const query = useQuery({
     queryKey: ["virtual-workout-detail", id],
     queryFn: () => getVirtualWorkoutDetail(id!),
-    enabled: !!id,
+    enabled: !!id && permitted,
     refetchInterval: 15000,
     refetchOnWindowFocus: true,
   });
@@ -61,7 +64,15 @@ export default function SelfWorkoutDetailPage() {
           <Link to="/schedule" className="text-sm text-slate-300 hover:text-white">← My Workouts</Link>
         </header>
 
-        {query.isPending ? (
+        {membershipLoading ? (
+          <p className="mt-12 text-center text-slate-300">Checking current membership...</p>
+        ) : !permitted ? (
+          <section className={`${panel} mt-10 p-8 text-center`}>
+            <h1 className="text-2xl font-bold">Workout unavailable for selected membership</h1>
+            <p className="mt-3 text-sm text-slate-300">Choose the corresponding active Self membership to open this workout.</p>
+            <Link to="/schedule" className="mt-6 inline-block rounded-xl bg-[#2F80ED] px-5 py-3 font-semibold">Back to Schedule</Link>
+          </section>
+        ) : query.isPending ? (
           <p className="mt-12 text-center text-slate-300">Loading workout details...</p>
         ) : query.isError || !workout ? (
           <section className={`${panel} mt-10 p-8 text-center`}>

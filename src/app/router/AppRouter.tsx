@@ -6,10 +6,12 @@ import {
 } from "react-router-dom";
 
 import AppShell from "../../components/layout/AppShell";
+import MemberMembershipLayout from "../../components/layout/MemberMembershipLayout";
 import TrainerAppShell from "../../components/layout/TrainerAppShell";
 
 import ProtectedRoute from "../../components/auth/ProtectedRoute";
 import MemberRoute from "../../components/auth/MemberRoute";
+import MembershipRequiredRoute from "../../components/auth/MembershipRequiredRoute";
 import TrainerRoute from "../../components/auth/TrainerRoute";
 import OnboardingGuard from "../../components/auth/OnboardingGuard";
 
@@ -44,6 +46,10 @@ import TrainerSessionDetailPage from "../../pages/trainer/TrainerSessionDetailPa
 import MemberAssessmentResultPage from "../../pages/MemberAssessmentResultPage";
 import SelfAssessmentHomePage from "../../pages/SelfAssessmentHomePage";
 import SelfAssessmentPage from "../../pages/SelfAssessmentPage";
+import FreeTrialPage from "../../pages/FreeTrialPage";
+import MembershipPlansPage from "../../pages/MembershipPlansPage";
+import MemberCheckoutPage from "../../pages/MemberCheckoutPage";
+import PurchaseHistoryPage from "../../pages/PurchaseHistoryPage";
 
 export default function AppRouter() {
   return (
@@ -105,6 +111,7 @@ export default function AppRouter() {
           }
         >
           <Route element={<OnboardingGuard />}>
+            <Route element={<MemberMembershipLayout />}>
             {/* ==============================================
                 Member application shell
             ============================================== */}
@@ -127,14 +134,14 @@ export default function AppRouter() {
 
               <Route
                 path="/schedule"
-                element={<SchedulePage />}
+                element={<MembershipRequiredRoute><SchedulePage /></MembershipRequiredRoute>}
               />
-              <Route path="/self-schedule/:enrollmentId" element={<SelfWorkoutScheduleSettingsPage />} />
-              <Route path="/self-workout/:id" element={<SelfWorkoutDetailPage />} />
+              <Route path="/self-schedule/:enrollmentId" element={<MembershipRequiredRoute><SelfWorkoutScheduleSettingsPage /></MembershipRequiredRoute>} />
+              <Route path="/self-workout/:id" element={<MembershipRequiredRoute><SelfWorkoutDetailPage /></MembershipRequiredRoute>} />
 
               <Route
                 path="/progress"
-                element={<ProgressPage />}
+                element={<MembershipRequiredRoute><ProgressPage /></MembershipRequiredRoute>}
               />
 
               <Route
@@ -143,6 +150,10 @@ export default function AppRouter() {
                     <MemberAssessmentResultPage />
                 }
                 />
+
+              <Route path="/free-assessment" element={<SelfAssessmentHomePage />} />
+              <Route path="/free-trial" element={<FreeTrialPage />} />
+              <Route path="/free-assessment/:assessmentId" element={<SelfAssessmentPage />} />
 
               <Route
                 path="/assessment"
@@ -156,8 +167,12 @@ export default function AppRouter() {
 
               <Route
                 path="/program"
-                element={<ProgramPage />}
+                element={<MembershipRequiredRoute><ProgramPage /></MembershipRequiredRoute>}
               />
+
+              <Route path="/membership-plans" element={<MembershipPlansPage />} />
+              <Route path="/membership-checkout" element={<MemberCheckoutPage />} />
+              <Route path="/my-purchases" element={<PurchaseHistoryPage />} />
 
               <Route
                 path="/profile"
@@ -173,13 +188,14 @@ export default function AppRouter() {
 
             <Route
               path="/session/:id"
-              element={<SessionPage />}
+              element={<MembershipRequiredRoute><SessionPage /></MembershipRequiredRoute>}
             />
 
             <Route
               path="/feedback/:sessionId"
-              element={<FeedbackPage />}
+              element={<MembershipRequiredRoute><FeedbackPage /></MembershipRequiredRoute>}
             />
+            </Route>
           </Route>
         </Route>
 

@@ -1,17 +1,13 @@
 import { NavLink } from "react-router-dom";
 
-const items = [
-  { label: "Home", to: "/dashboard" },
-  { label: "Schedule", to: "/schedule" },
-  { label: "Progress", to: "/progress" },
-  { label: "Program", to: "/program" },
-  { label: "Profile", to: "/profile" },
-];
+import { useMembershipNavigation } from "./useMembershipNavigation";
 
 export default function BottomNavigation() {
+  const { items } = useMembershipNavigation();
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white md:hidden">
-      <div className="mx-auto grid max-w-md grid-cols-5">
+      <div className="mx-auto grid max-w-md"
+        style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
         {items.map((item) => (
           <NavLink
             key={item.to}

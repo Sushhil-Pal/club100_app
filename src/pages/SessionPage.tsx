@@ -1,3 +1,4 @@
+import { useMembershipSelection } from "../context/MembershipContext";
 import {
   useQuery,
 } from "@tanstack/react-query";
@@ -152,6 +153,7 @@ function StatusBadge({
 }
 
 export default function SessionPage() {
+  const { selectedEnrollmentId, loading: membershipLoading, error: membershipError } = useMembershipSelection();
   const navigate =
     useNavigate();
 
@@ -166,15 +168,17 @@ export default function SessionPage() {
       queryKey: [
         "member-session",
         id,
+        selectedEnrollmentId,
       ],
 
       queryFn: () =>
         getMemberSessionDetail(
-          id!
+          id!,
+          selectedEnrollmentId
         ),
 
       enabled:
-        !!id,
+        !!id && !membershipLoading && !membershipError && !!selectedEnrollmentId,
 
       // While the page is open we want a Scheduled
       // session to turn Live shortly after the trainer
@@ -188,7 +192,7 @@ export default function SessionPage() {
   // ---------------------------------------------------------
 
   if (
-    sessionQuery.isLoading
+    membershipLoading || sessionQuery.isLoading
   ) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-white">
@@ -213,7 +217,7 @@ export default function SessionPage() {
   // ---------------------------------------------------------
 
   if (
-    sessionQuery.isError ||
+    membershipError || !selectedEnrollmentId || sessionQuery.isError ||
     !sessionQuery.data
   ) {
     return (

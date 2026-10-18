@@ -1,3 +1,4 @@
+import { useMembershipSelection } from "../context/MembershipContext";
 import {
   useState,
 } from "react";
@@ -445,6 +446,7 @@ function SessionCard({
 }
 
 function LegacySchedulePage() {
+ const {selectedEnrollmentId}=useMembershipSelection();
   const [
     activeTab,
     setActiveTab,
@@ -455,11 +457,10 @@ function LegacySchedulePage() {
   const scheduleQuery =
     useQuery({
       queryKey: [
-        "member-schedule",
+        "member-schedule", selectedEnrollmentId,
       ],
 
-      queryFn:
-        getMemberSchedule,
+      queryFn:()=>getMemberSchedule(selectedEnrollmentId),
 
       refetchInterval:
         30000,
@@ -652,7 +653,8 @@ import {getAssessmentContext} from "../services/memberService";
 import SelfWorkoutSchedulePage from "./SelfWorkoutSchedulePage";
 
 export default function SchedulePage(){
- const context=useQuery({queryKey:["member-assessment-context"],queryFn:getAssessmentContext});
+ const {selectedEnrollmentId}=useMembershipSelection();
+ const context=useQuery({queryKey:["member-assessment-context",selectedEnrollmentId],queryFn:()=>getAssessmentContext(selectedEnrollmentId)});
  if(context.isPending) return <div className="p-6">Loading schedule...</div>;
  if(context.isError) return <div className="p-6 text-red-700">Unable to load member plan: {context.error.message}</div>;
  if(context.data.plan?.code==="self") {

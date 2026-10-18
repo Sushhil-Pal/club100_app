@@ -2,12 +2,15 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 
+import { captureAssessmentDestination, consumePostAuthDestination, assessmentAuthLink } from "../utils/postAuthDestination";
+
 import {
   login,
 } from "../services/authService";
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  captureAssessmentDestination(window.location.search);
   const queryClient = useQueryClient();
 
   const [loginId, setLoginId] =
@@ -34,6 +37,7 @@ export default function LoginPage() {
       // -------------------------------------------------
 
       if (isTrainer) {
+        consumePostAuthDestination();
         navigate(
           "/trainer",
           {
@@ -67,7 +71,7 @@ export default function LoginPage() {
         }
 
         navigate(
-          "/dashboard",
+          consumePostAuthDestination(),
           {
             replace: true,
           }
@@ -225,7 +229,7 @@ export default function LoginPage() {
             <p className="mt-6 text-center text-sm text-slate-500">
               New to Club100?{" "}
               <Link
-                to="/register"
+                to={assessmentAuthLink("/register")}
                 className="font-semibold text-[#2F80ED]"
               >
                 Create Account

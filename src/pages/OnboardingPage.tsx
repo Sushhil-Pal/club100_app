@@ -9,6 +9,8 @@ import {
   useNavigate,
 } from "react-router-dom";
 
+import { consumePostAuthDestination } from "../utils/postAuthDestination";
+
 import PageContainer from "../components/layout/PageContainer";
 
 import {
@@ -93,7 +95,7 @@ export default function OnboardingPage() {
       );
 
       navigate(
-        "/dashboard",
+        consumePostAuthDestination(),
         {
           replace: true,
         }
@@ -136,7 +138,7 @@ export default function OnboardingPage() {
   ) {
     return (
       <Navigate
-        to="/dashboard"
+        to={consumePostAuthDestination()}
         replace
       />
     );

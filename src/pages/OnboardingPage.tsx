@@ -42,11 +42,6 @@ export default function OnboardingPage() {
   ] = useState("");
 
   const [
-    preferredDeliveryMode,
-    setPreferredDeliveryMode,
-  ] = useState("");
-
-  const [
     medicalNotes,
     setMedicalNotes,
   ] = useState("");
@@ -179,19 +174,12 @@ export default function OnboardingPage() {
       return;
     }
 
-    if (!preferredDeliveryMode) {
-      setFormError(
-        "Please select your preferred delivery mode."
-      );
-      return;
-    }
-
     onboardingMutation.mutate({
       dateOfBirth,
       gender,
       fitnessGoals,
       currentFitnessLevel,
-      preferredDeliveryMode,
+      preferredDeliveryMode: "", // Legacy API input; delivery is determined by enrollment.
       medicalNotes,
     });
   };
@@ -284,7 +272,7 @@ export default function OnboardingPage() {
 
           <div className="mt-5">
             <label className="text-sm font-medium text-slate-700">
-              Primary Fitness Goals
+              Fitness Goals
             </label>
 
             <p className="mt-1 text-xs text-slate-500">
@@ -364,38 +352,6 @@ export default function OnboardingPage() {
 
               <option value="Advanced">
                 Advanced
-              </option>
-            </select>
-          </div>
-
-          <div className="mt-5">
-            <label className="text-sm font-medium text-slate-700">
-              Preferred Delivery Mode
-            </label>
-
-            <select
-              value={preferredDeliveryMode}
-              onChange={(event) =>
-                setPreferredDeliveryMode(
-                  event.target.value
-                )
-              }
-              className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-[#2F80ED]"
-            >
-              <option value="">
-                Select delivery mode
-              </option>
-
-              <option value="Online">
-                Online
-              </option>
-
-              <option value="Onsite">
-                Onsite
-              </option>
-
-              <option value="Hybrid">
-                Hybrid
               </option>
             </select>
           </div>

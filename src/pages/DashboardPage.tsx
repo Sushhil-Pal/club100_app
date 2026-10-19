@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useMembershipSelection } from "../context/MembershipContext";
 import {
   useQuery,
@@ -104,7 +105,7 @@ function getGreeting() {
   return "Good evening";
 }
 
-function EnrolledDashboardPage() {
+function EnrolledDashboardPage({ membershipBanner }: { membershipBanner: ReactNode }) {
   const {selectedEnrollmentId}=useMembershipSelection();
   // ---------------------------------------------------------
   // Queries
@@ -286,6 +287,8 @@ function EnrolledDashboardPage() {
             Here&apos;s what&apos;s happening with your Club100 journey.
           </p>
         </div>
+
+        {membershipBanner}
 
         {/* --------------------------------------------------
             Next Session / Guided Workout
@@ -955,16 +958,48 @@ function EnrolledDashboardPage() {
   );
 }
 
+// Calendar-day countdown (not elapsed 24-hour periods). Trial end dates are
+// inclusive; on the last day we show "Last day" rather than "0 days left".
+function trialDaysRemaining(endDate: string): number | null {
+  const parts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(endDate);
+  if (!parts) return null;
+  const year = Number(parts[1]);
+  const month = Number(parts[2]);
+  const day = Number(parts[3]);
+  const end = Date.UTC(year, month - 1, day);
+  const validDate = new Date(end);
+  if (validDate.getUTCFullYear() !== year || validDate.getUTCMonth() !== month - 1 || validDate.getUTCDate() !== day) return null;
+  const today = new Date();
+  const start = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+  return Math.max(0, Math.round((end - start) / 86_400_000));
+}
+
 // Enrollment-aware entry point: do not request enrolled-only dashboard data
 // for assessment-only members. Existing enrolled dashboard remains unchanged.
 export default function DashboardPage() {
-  const purchases = useQuery({queryKey:["my-purchases"],queryFn:getMyPurchases,refetchInterval:60_000});
-  const scheduled = purchases.data?.purchases.find(p => p.status === "Scheduled" && p.paymentStatus === "Paid");
-  const banner = scheduled ? <div className="mx-auto w-full max-w-6xl px-4 pt-5"><div className="rounded-2xl border border-teal-200 bg-teal-50 p-4 text-teal-950"><strong>Paid membership scheduled</strong><p className="mt-1 text-sm">{scheduled.program} Self membership begins {scheduled.startDate}. Your remaining trial days are preserved.</p><Link className="mt-2 inline-block text-sm font-semibold text-teal-700 underline" to="/my-purchases">View purchase details →</Link></div></div> : null;
-  const {selectedEnrollmentId,loading,error}=useMembershipSelection();
+  const { memberships, selectedEnrollmentId, loading, error } = useMembershipSelection();
+  const purchases = useQuery({
+    queryKey: ["my-purchases"],
+    queryFn: getMyPurchases,
+    refetchInterval: 60_000,
+  });
+  const scheduled = purchases.data?.purchases.find(
+    p => p.status === "Scheduled" && p.paymentStatus === "Paid"
+  );
+  const selectedMembership = memberships.find(
+    m => m.enrollmentId === selectedEnrollmentId
+  );
+  // Only offer conversion for the selected, currently active trial.
+  // Don't show competing checkout prompts while purchase history is loading,
+  // or after a paid membership has already been scheduled.
+  const trial = !purchases.isPending && !purchases.isError && !scheduled &&
+    selectedMembership?.isTrial && selectedMembership.status === "Active"
+      ? selectedMembership
+      : null;
+
   const programQuery = useQuery({
-    queryKey: ["current-program"],
-    queryFn:()=>getCurrentProgram(selectedEnrollmentId),
+    queryKey: ["current-program", selectedEnrollmentId],
+    queryFn: () => getCurrentProgram(selectedEnrollmentId),
   });
 
   if (loading || programQuery.isLoading) {
@@ -987,9 +1022,43 @@ export default function DashboardPage() {
     );
   }
 
+  const daysLeft = trial ? trialDaysRemaining(trial.endDate) : null;
+  const banner = scheduled ? (
+    <section className="rounded-2xl border border-teal-200 bg-teal-50 p-5 text-teal-950 shadow-sm">
+        <strong>Paid membership scheduled</strong>
+        <p className="mt-1 text-sm">
+          {scheduled.program} Self membership begins {scheduled.startDate}.
+          Your remaining trial days are preserved.
+        </p>
+        <Link className="mt-2 inline-block text-sm font-semibold text-teal-700 underline" to="/my-purchases">
+          View purchase details →
+        </Link>
+    </section>
+  ) : trial ? (
+      <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-[#12395B] shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-bold">Your 14-Day Free Trial</h2>
+          <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#2F80ED]">
+            {daysLeft === null ? "Active" : daysLeft === 0 ? "Last day" : `${daysLeft} ${daysLeft === 1 ? "day" : "days"} left`}
+          </span>
+        </div>
+        <p className="mt-2 text-sm text-slate-700">
+          Your {trial.program} trial is active until {formatDate(trial.endDate)}.
+          Purchase your Self membership now without losing your remaining trial days.
+          Your paid plan will start after your trial ends.
+        </p>
+        <Link
+          to="/membership-plans"
+          className="mt-4 inline-block rounded-xl bg-[#2F80ED] px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-[#1F6FD1]"
+        >
+          View Membership Plans →
+        </Link>
+      </section>
+  ) : null;
+
   if (!programQuery.data) {
     return <>{banner}<AssessmentOnlyDashboardPage /></>;
   }
 
-  return <>{banner}<EnrolledDashboardPage /></>;
+  return <EnrolledDashboardPage membershipBanner={banner} />;
 }

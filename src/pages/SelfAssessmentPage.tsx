@@ -294,7 +294,7 @@ export default function SelfAssessmentPage() {
     ],
     queryFn: () =>
       isFree ? getFreeAssessment(assessmentId!) : getSelfAssessment(assessmentId!, selectedEnrollmentId),
-    enabled: !!assessmentId && (isFree || (!membershipLoading && !!selectedEnrollmentId)),
+    enabled: !!assessmentId && !membershipLoading,
   });
 
   useEffect(() => {
@@ -429,11 +429,11 @@ export default function SelfAssessmentPage() {
 
       return action === "Completed"
         ? (isFree
-            ? completeFreeAssessment(assessmentId!, payload)
-            : completeSelfAssessment(assessmentId!, payload, selectedEnrollmentId))
+            ? completeFreeAssessment(assessmentId!, payload, assessmentQuery.data?.assessment.modified)
+            : completeSelfAssessment(assessmentId!, payload, selectedEnrollmentId, assessmentQuery.data?.assessment.modified))
         : (isFree
-            ? saveFreeAssessment(assessmentId!, payload)
-            : saveSelfAssessment(assessmentId!, payload, selectedEnrollmentId));
+            ? saveFreeAssessment(assessmentId!, payload, assessmentQuery.data?.assessment.modified)
+            : saveSelfAssessment(assessmentId!, payload, selectedEnrollmentId, assessmentQuery.data?.assessment.modified));
     },
 
     onSuccess: async (response) => {

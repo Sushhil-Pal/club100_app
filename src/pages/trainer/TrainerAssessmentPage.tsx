@@ -487,7 +487,8 @@ export default function TrainerAssessmentPage() {
         return saveTrainerAssessment(
           assessmentId!,
           payload,
-          status
+          status,
+          assessmentQuery.data?.assessment.modified
         );
       },
 

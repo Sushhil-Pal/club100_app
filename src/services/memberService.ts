@@ -572,6 +572,7 @@ export type MemberSelfAssessmentDetail = {
     deliveryMode: string;
     status: string;
     template: string;
+    modified: string;
     enrollmentId: string | null;
     programId: string | null;
     safetyAcknowledgedOn: string | null;
@@ -651,13 +652,15 @@ export async function getSelfAssessment(
 export async function saveSelfAssessment(
   assessmentId: string,
   inputs: MemberSelfAssessmentSaveInput[],
-  enrollmentId?: string | null
+  enrollmentId?: string | null,
+  expectedModified?: string
 ): Promise<MemberSelfAssessmentSaveResponse> {
   return apiPost<MemberSelfAssessmentSaveResponse>(
     "/api/method/club100_core.api.member.save_self_assessment",
     {
       assessment_id: assessmentId,
       inputs,
+      expected_modified: expectedModified,
       ...(enrollmentId ? { enrollment_id: enrollmentId } : {}),
     }
   );
@@ -666,13 +669,15 @@ export async function saveSelfAssessment(
 export async function completeSelfAssessment(
   assessmentId: string,
   inputs: MemberSelfAssessmentSaveInput[],
-  enrollmentId?: string | null
+  enrollmentId?: string | null,
+  expectedModified?: string
 ): Promise<MemberSelfAssessmentSaveResponse> {
   return apiPost<MemberSelfAssessmentSaveResponse>(
     "/api/method/club100_core.api.member.complete_self_assessment",
     {
       assessment_id: assessmentId,
       inputs,
+      expected_modified: expectedModified,
       ...(enrollmentId ? { enrollment_id: enrollmentId } : {}),
     }
   );
@@ -699,16 +704,16 @@ export async function getFreeAssessment(assessmentId: string): Promise<MemberSel
   );
 }
 
-export async function saveFreeAssessment(assessmentId: string, inputs: MemberSelfAssessmentSaveInput[]): Promise<MemberSelfAssessmentSaveResponse> {
+export async function saveFreeAssessment(assessmentId: string, inputs: MemberSelfAssessmentSaveInput[], expectedModified?: string): Promise<MemberSelfAssessmentSaveResponse> {
   return apiPost<MemberSelfAssessmentSaveResponse>(
     "/api/method/club100_core.api.free_assessment.save_free_assessment",
-    { assessment_id: assessmentId, inputs }
+    { assessment_id: assessmentId, inputs, expected_modified: expectedModified }
   );
 }
 
-export async function completeFreeAssessment(assessmentId: string, inputs: MemberSelfAssessmentSaveInput[]): Promise<MemberSelfAssessmentSaveResponse> {
+export async function completeFreeAssessment(assessmentId: string, inputs: MemberSelfAssessmentSaveInput[], expectedModified?: string): Promise<MemberSelfAssessmentSaveResponse> {
   return apiPost<MemberSelfAssessmentSaveResponse>(
     "/api/method/club100_core.api.free_assessment.complete_free_assessment",
-    { assessment_id: assessmentId, inputs }
+    { assessment_id: assessmentId, inputs, expected_modified: expectedModified }
   );
 }

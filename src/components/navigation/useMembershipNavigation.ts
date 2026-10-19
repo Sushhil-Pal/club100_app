@@ -5,14 +5,14 @@ import { getCurrentProgram } from "../../services/programService";
 export const enrolledNavItems = [
   { label: "Dashboard", to: "/dashboard" },
   { label: "Schedule", to: "/schedule" },
+  { label: "Assessments", to: "/assessment" },
   { label: "Progress", to: "/progress" },
-  { label: "Program", to: "/program" },
   { label: "Profile", to: "/profile" },
 ];
 
 export const freeNavItems = [
   { label: "Dashboard", to: "/dashboard" },
-  { label: "Fitness Assessment", to: "/free-assessment" },
+  { label: "Assessments", to: "/free-assessment" },
   { label: "Profile", to: "/profile" },
 ];
 

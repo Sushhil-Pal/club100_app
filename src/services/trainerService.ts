@@ -161,6 +161,7 @@ export type TrainerAssessmentDetail = {
     deliveryMode: string;
     status: string;
     template: string;
+    modified: string;
 
     inputs: TrainerAssessmentInput[];
   };
@@ -202,7 +203,8 @@ export type SaveTrainerAssessmentResponse = {
 export async function saveTrainerAssessment(
   assessmentId: string,
   inputs: SaveTrainerAssessmentInput[],
-  status: "Draft" | "Completed"
+  status: "Draft" | "Completed",
+  expectedModified?: string
 ): Promise<SaveTrainerAssessmentResponse> {
   return apiPost<SaveTrainerAssessmentResponse>(
     "/api/method/club100_core.api.trainer.save_assessment",
@@ -210,6 +212,7 @@ export async function saveTrainerAssessment(
       assessment_id: assessmentId,
       inputs,
       status,
+      expected_modified: expectedModified,
     }
   );
 }

@@ -59,7 +59,7 @@ export default function SelfAssessmentHomePage() {
       ...(isFree ? [] : [selectedEnrollmentId]),
     ],
     queryFn: () => isFree ? getFreeAssessmentContext() : getAssessmentContext(selectedEnrollmentId),
-    enabled: isFree || (!membershipLoading && !!selectedEnrollmentId),
+    enabled: !membershipLoading,
   });
 
   const startMutation = useMutation({
@@ -120,12 +120,12 @@ export default function SelfAssessmentHomePage() {
           </p>
 
           <h1 className="mt-2 text-3xl font-bold text-[#12395B]">
-            Self Assessment
+            Fitness Assessment
           </h1>
 
           <p className="mt-4 text-slate-600">
             {context.reason ||
-              "Self Assessment is not available for your current membership."}
+              "Fitness Assessment is not available for your current membership."}
           </p>
         </div>
       </PageContainer>

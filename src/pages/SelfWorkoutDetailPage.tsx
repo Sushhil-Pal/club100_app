@@ -54,6 +54,7 @@ export default function SelfWorkoutDetailPage() {
   const completed = currentActivity?.status === "Completed";
   const started = currentActivity?.status === "Started";
   const access = workout?.accessState;
+  const rx = workout?.curriculumWorkout?.prescription;
   const statusText = completed ? "Completed" : started ? "Started" : access === "Available" ? "Available Now" : access === "Expired" ? "Access Ended" : "Scheduled";
 
   return (
@@ -96,7 +97,7 @@ export default function SelfWorkoutDetailPage() {
                 <div className="rounded-2xl bg-white/[0.06] p-5"><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Duration</p><p className="mt-2 font-semibold">{workout.durationMinutes} minutes</p></div>
               </div>
               <div className={`mt-8 rounded-2xl border p-5 text-center ${completed ? "border-green-400/20 bg-green-500/10" : access === "Available" ? "border-blue-400/20 bg-blue-500/10" : "border-white/10 bg-white/[0.04]"}`}>
-                {completed ? <><p className="font-semibold text-green-300">✓ Workout completed</p><p className="mt-2 text-sm text-slate-300">Your completed workout has been recorded.</p></> : access === "Available" ? <><p className="font-semibold text-blue-200">Your workout is available now</p><p className="mt-2 text-sm text-slate-300">Open the guided video when you're ready to train.</p></> : access === "Expired" ? <><p className="font-semibold text-slate-200">Workout access window ended</p><p className="mt-2 text-sm text-slate-400">The guided video is no longer available.</p></> : <><p className="font-semibold text-blue-200">Your workout is scheduled</p><p className="mt-2 text-sm text-slate-400">The video unlocks at your scheduled start time.</p><div className="mt-4 inline-flex rounded-xl bg-white/5 px-4 py-3 text-sm text-slate-300">Video locked until start time</div></>}
+                {completed ? <><p className="font-semibold text-green-300">✓ Workout completed</p><p className="mt-2 text-sm text-slate-300">Your completed workout has been recorded.</p></> : access === "Available" ? <><p className="font-semibold text-blue-200">Your workout is available now</p><p className="mt-2 text-sm text-slate-300">Start your workout when you're ready to train.</p></> : access === "Expired" ? <><p className="font-semibold text-slate-200">Workout access window ended</p><p className="mt-2 text-sm text-slate-400">The guided video is no longer available.</p></> : <><p className="font-semibold text-blue-200">Your workout is scheduled</p><p className="mt-2 text-sm text-slate-400">The video unlocks at your scheduled start time.</p><div className="mt-4 inline-flex rounded-xl bg-white/5 px-4 py-3 text-sm text-slate-300">Video locked until start time</div></>}
                 {!completed && access !== "Available" && access !== "Expired" && (
                   <div className="mt-5 flex flex-col items-center gap-2">
                     <p className="text-xs text-slate-400">Automatically checking availability every 15 seconds.</p>
@@ -117,7 +118,7 @@ export default function SelfWorkoutDetailPage() {
                   <div className="mt-5 flex flex-wrap justify-center gap-3">
                     {access === "Available" && workout.videoUrl && !completed && <button type="button" disabled={start.isPending} onClick={async () => { const tab = window.open("about:blank", "_blank"); try { await start.mutateAsync(); if (tab) { tab.opener = null; tab.location.href = workout.videoUrl!; } else { window.location.href = workout.videoUrl!; } } catch { tab?.close(); } }} className="rounded-xl bg-[#2F80ED] px-6 py-3 font-semibold text-white disabled:opacity-50">{start.isPending ? "Starting..." : currentActivity ? "Open Guided Workout" : "Start Workout"}</button>}
                     {started && <button type="button" disabled={complete.isPending} onClick={() => complete.mutate()} className="rounded-xl border border-blue-400 px-6 py-3 font-semibold text-blue-200 disabled:opacity-50">{complete.isPending ? "Saving..." : "Mark Completed"}</button>}
-                    {access === "Available" && !workout.videoUrl && <p className="text-sm text-slate-300">No video is configured for this workout.</p>}
+                    {access === "Available" && !workout.videoUrl && !completed && !started && <button type="button" disabled={start.isPending} onClick={() => start.mutate()} className="rounded-xl bg-[#2F80ED] px-6 py-3 font-semibold text-white disabled:opacity-50">{start.isPending ? "Starting..." : "Start Workout"}</button>}
                   </div>
                 )}
                 {start.isError && <p className="mt-3 text-sm text-red-300">{start.error.message}</p>}
@@ -129,7 +130,23 @@ export default function SelfWorkoutDetailPage() {
               <section className={`${panel} p-6`}>
                 <p className="text-xs font-semibold uppercase tracking-wide text-[#2F80ED]">Today's Workout</p>
                 <h2 className="mt-3 text-xl font-bold">Workout Plan</h2>
-                {workout.instructions ? <div className="prose prose-invert mt-4 max-w-none text-sm leading-7 text-slate-300" dangerouslySetInnerHTML={{ __html: workout.instructions }} /> : <p className="mt-4 text-sm text-slate-400">Follow the guided workout video when it becomes available.</p>}
+                {rx ? (
+                  <div className="mt-4 space-y-4 text-sm leading-7 text-slate-200">
+                    {rx.objective && <p>{rx.objective}</p>}
+                    {([
+                      ["Warm-up", rx.warm_up],
+                      ["Main Block A", rx.main_block_a],
+                      ["Main Block B", rx.main_block_b],
+                      ["Finisher / Skill", rx.finisher_skill],
+                      ["Cooldown", rx.cooldown],
+                    ] as [string, string | undefined][])
+                      .filter(([, value]) => !!value)
+                      .map(([heading, value]) => (
+                      <div key={heading}><h3 className="font-semibold text-white">{heading}</h3><p className="whitespace-pre-line text-slate-300">{value}</p></div>
+                    ))}
+                    {rx.intensity && <p><strong>Intensity:</strong> {rx.intensity}</p>}
+                  </div>
+                ) : workout.instructions ? <div className="prose prose-invert mt-4 max-w-none text-sm leading-7 text-slate-300" dangerouslySetInnerHTML={{ __html: workout.instructions }} /> : <p className="mt-4 text-sm text-slate-400">Workout instructions unavailable.</p>}
               </section>
               <aside className="space-y-6">
                 <section className={`${panel} p-5`}>

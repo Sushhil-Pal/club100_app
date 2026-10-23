@@ -10,6 +10,7 @@ import {
 import PageContainer from "../components/layout/PageContainer";
 import AssessmentJourneyCard from "../components/assessment/AssessmentJourneyCard";
 import SelfWeeklyWorkouts from "../components/self/SelfWeeklyWorkouts";
+import TrainingJourneyCard from "../components/training/TrainingJourneyCard";
 
 import {
   getCurrentProgram,
@@ -662,6 +663,13 @@ export default function ProgramPage() {
               </div>
             </div>
           </section>
+        )}
+
+        {isSelfPlan && assessmentContext?.enrollment?.id && (
+          <TrainingJourneyCard
+            enrollmentId={assessmentContext.enrollment.id}
+            programId={program.id}
+          />
         )}
 
         {isSelfPlan &&

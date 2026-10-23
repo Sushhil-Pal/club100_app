@@ -739,3 +739,39 @@ export function updateTrainerSessionPreparation(
     session_id: sessionId, ...payload,
   });
 }
+
+// Society curriculum prescriptions are read-only; the scheduled workout format
+// remains editable through the existing trainer preparation workflow.
+export type TrainerSocietyPrescription = {
+  sessionId: string;
+  cohort: string;
+  curriculum: string;
+  curriculumStatus: string;
+  cycleNumber: number;
+  weekNumber: number;
+  sessionNumber: number;
+  format: string;
+  curriculumFormat: string;
+  actualFormat: string;
+  formatOverridden: boolean;
+  overrideReason: string;
+  prescriptionAvailable: boolean;
+  title?: string;
+  objective?: string;
+  warmUp?: string;
+  mainBlockA?: string;
+  mainBlockB?: string;
+  finisher?: string;
+  cooldown?: string;
+  duration?: string;
+  core?: string;
+  strong?: string;
+  performance?: string;
+  trainerCues?: string;
+};
+
+export function getTrainerSocietyPrescription(sessionId: string): Promise<TrainerSocietyPrescription> {
+  return apiGet<TrainerSocietyPrescription>(
+    `/api/method/club100_core.curriculum.society_session_api.trainer_society_session_prescription?session_id=${encodeURIComponent(sessionId)}`
+  );
+}

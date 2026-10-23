@@ -1,11 +1,32 @@
 import { apiGet, apiPost } from "./api";
 
+export type CurriculumPrescription = {
+  curriculum: string;
+  levelCode: string;
+  cycleNumber: number;
+  weekNumber: number;
+  sessionNumber: number;
+  prescription: {
+    workout_format: string;
+    session_title: string;
+    objective?: string;
+    warm_up?: string;
+    main_block_a?: string;
+    main_block_b?: string;
+    finisher_skill?: string;
+    cooldown?: string;
+    intensity?: string;
+    equipment?: string;
+    duration?: string;
+  };
+};
 export type VirtualWorkout = {
+  curriculumWorkout?: CurriculumPrescription | null;
   id: string;
   enrollment: string;
   sequenceNo: number;
   cycle: string;
-  workoutContent: string;
+  workoutContent: string | null;
   title: string;
   format: string | null;
   fitnessLevel: string | null;
@@ -20,6 +41,7 @@ export type VirtualWorkout = {
 };
 export type VirtualWorkoutDetail = VirtualWorkout & {
   instructions: string | null;
+  prescription?: CurriculumPrescription["prescription"];
   videoUrl: string | null;
 };
 export async function getVirtualWorkouts(enrollmentId: string, from: string, to: string) {

@@ -19,6 +19,7 @@ import {
   cancelTrainerSession,
   completeTrainerSession,
   getTrainerSessionDetail,
+  getTrainerSocietyPrescription,
   updateTrainerSessionPreparation,
   saveTrainerSessionAttendance,
   startTrainerSession,
@@ -112,6 +113,56 @@ function SessionPreparationEditor({sessionId, data, onSaved}: {
       className="mt-4 rounded-lg bg-[#2F80ED] px-4 py-2 text-white disabled:opacity-50">Save Preparation</button>
     {mutation.isError && <p className="mt-2 text-sm text-red-700">{mutation.error.message}</p>}
     {mutation.isSuccess && <p className="mt-2 text-sm text-green-700">Saved.</p>}
+  </section>;
+}
+
+function SocietyCurriculumPanel({sessionId}: {sessionId: string}) {
+  const query = useQuery({
+    queryKey: ["trainer-society-prescription", sessionId],
+    queryFn: () => getTrainerSocietyPrescription(sessionId),
+  });
+  if (query.isLoading) {
+    return <section className="mt-5 rounded-2xl bg-white p-5 shadow-sm">Loading Society curriculum...</section>;
+  }
+  if (query.isError) {
+    return <section className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
+      Society prescription is unavailable for this session. {query.error instanceof Error ? query.error.message : ""}
+    </section>;
+  }
+  const data = query.data;
+  if (!data) return null;
+  const detail = [
+    ["Warm-up", data.warmUp],
+    ["Main block A", data.mainBlockA],
+    ["Main block B", data.mainBlockB],
+    ["Finisher / skill", data.finisher],
+    ["Cooldown", data.cooldown],
+  ];
+  return <section className="mt-5 rounded-2xl bg-white p-5 shadow-sm">
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <h2 className="text-lg font-bold text-[#12395B]">Society Curriculum</h2>
+        <p className="mt-1 text-sm text-slate-600">Cycle {data.cycleNumber} · Week {data.weekNumber} · Session {data.sessionNumber}</p>
+      </div>
+      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{data.actualFormat}</span>
+    </div>
+    <p className="mt-2 text-xs text-slate-500">{data.curriculumStatus}</p>
+    {data.formatOverridden || !data.prescriptionAvailable ? (
+      <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+        <p className="font-semibold">Session format changed from {data.curriculumFormat} to {data.actualFormat}.</p>
+        {data.overrideReason && <p className="mt-2">Reason: {data.overrideReason}</p>}
+        <p className="mt-2">Curriculum exercises and level variations do not apply to this substituted session.</p>
+      </div>
+    ) : (
+      <div className="mt-4 space-y-4 text-sm text-slate-700">
+        <div><h3 className="font-semibold text-[#12395B]">{data.title}</h3>{data.duration && <p className="mt-1 text-slate-500">{data.duration}</p>}{data.objective && <p className="mt-2">{data.objective}</p>}</div>
+        {detail.map(([label, value]) => value ? <div key={label}><h3 className="font-semibold text-[#12395B]">{label}</h3><p className="mt-1 whitespace-pre-line">{value}</p></div> : null)}
+        <div className="grid gap-3 md:grid-cols-3">
+          {([ ["Core",data.core], ["Strong",data.strong], ["Performance",data.performance] ] as const).map(([label,value]) => <div key={label} className="rounded-xl bg-slate-50 p-3"><h3 className="font-semibold text-[#12395B]">{label}</h3><p className="mt-2 whitespace-pre-line">{value || "Not specified"}</p></div>)}
+        </div>
+        {data.trainerCues && <div className="rounded-xl border border-slate-200 p-3"><h3 className="font-semibold text-[#12395B]">Trainer cues</h3><p className="mt-2 whitespace-pre-line">{data.trainerCues}</p></div>}
+      </div>
+    )}
   </section>;
 }
 
@@ -573,8 +624,10 @@ export default function TrainerSessionDetailPage() {
     <div>
       {session.status !== "Completed" && session.status !== "Cancelled" && (
         <SessionPreparationEditor key={session.id + (session.workoutFormat || "")} sessionId={session.id} data={session}
-          onSaved={() => { void queryClient.invalidateQueries({queryKey:["trainer-session",sessionId]}); }} />
+          onSaved={() => { void queryClient.invalidateQueries({queryKey:["trainer-session",sessionId]}); void queryClient.invalidateQueries({queryKey:["trainer-society-prescription",sessionId]}); }} />
       )}
+
+      {session.deliveryMode === "Onsite" && <SocietyCurriculumPanel sessionId={session.id} />}
 
       {/* Header */}
 

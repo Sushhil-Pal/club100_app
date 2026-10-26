@@ -1,3 +1,5 @@
+import { useState } from "react";
+import WorkoutVideoPlayer from "../components/video/WorkoutVideoPlayer";
 import { useMembershipSelection } from "../context/MembershipContext";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -29,6 +31,7 @@ const panel = "rounded-2xl border border-white/10 bg-white/[0.06]";
 export default function SelfWorkoutDetailPage() {
   const { id } = useParams();
   const client = useQueryClient();
+  const [visibleVideoId, setVisibleVideoId] = useState<string | null>(null);
   const enrollment = id?.split(":")[0];
   const {selectedEnrollmentId, loading: membershipLoading, error: membershipError}=useMembershipSelection();
   const permitted = !!enrollment && !membershipLoading && !membershipError && selectedEnrollmentId === enrollment;
@@ -116,11 +119,12 @@ export default function SelfWorkoutDetailPage() {
                 )}
                 {activityQuery.isPending ? <p className="mt-4 text-sm text-slate-400">Loading workout activity...</p> : activityQuery.isError ? <p className="mt-4 text-sm text-red-300">Unable to load activity: {activityQuery.error.message}</p> : (
                   <div className="mt-5 flex flex-wrap justify-center gap-3">
-                    {access === "Available" && workout.videoUrl && !completed && <button type="button" disabled={start.isPending} onClick={async () => { const tab = window.open("about:blank", "_blank"); try { await start.mutateAsync(); if (tab) { tab.opener = null; tab.location.href = workout.videoUrl!; } else { window.location.href = workout.videoUrl!; } } catch { tab?.close(); } }} className="rounded-xl bg-[#2F80ED] px-6 py-3 font-semibold text-white disabled:opacity-50">{start.isPending ? "Starting..." : currentActivity ? "Open Guided Workout" : "Start Workout"}</button>}
+                    {access === "Available" && workout.videoUrl && !completed && <button type="button" disabled={start.isPending} onClick={async () => { if (!started && !currentActivity) { try { await start.mutateAsync(); } catch { return; } } setVisibleVideoId(id!); }} className="rounded-xl bg-[#2F80ED] px-6 py-3 font-semibold text-white disabled:opacity-50">{start.isPending ? "Starting..." : started || currentActivity ? "Watch Guided Workout" : "Start Workout"}</button>}
                     {started && <button type="button" disabled={complete.isPending} onClick={() => complete.mutate()} className="rounded-xl border border-blue-400 px-6 py-3 font-semibold text-blue-200 disabled:opacity-50">{complete.isPending ? "Saving..." : "Mark Completed"}</button>}
                     {access === "Available" && !workout.videoUrl && !completed && !started && <button type="button" disabled={start.isPending} onClick={() => start.mutate()} className="rounded-xl bg-[#2F80ED] px-6 py-3 font-semibold text-white disabled:opacity-50">{start.isPending ? "Starting..." : "Start Workout"}</button>}
                   </div>
                 )}
+                {access === "Available" && workout.videoUrl && !completed && visibleVideoId === id && !activityQuery.isError && !activityQuery.isPending && <WorkoutVideoPlayer videoUrl={workout.videoUrl} title={workout.title} />}
                 {start.isError && <p className="mt-3 text-sm text-red-300">{start.error.message}</p>}
                 {complete.isError && <p className="mt-3 text-sm text-red-300">{complete.error.message}</p>}
               </div>

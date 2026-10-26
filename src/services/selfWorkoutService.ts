@@ -25,14 +25,12 @@ export type VirtualWorkout = {
   id: string;
   enrollment: string;
   sequenceNo: number;
-  cycle: string;
-  workoutContent: string | null;
+  curriculum: string | null;
   title: string;
   format: string | null;
   fitnessLevel: string | null;
   durationMinutes: number;
   equipmentRequired: string | null;
-  thumbnail: string | null;
   scheduledDate: string;
   startTime: string;
   availableFrom: string;

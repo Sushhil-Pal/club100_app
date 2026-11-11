@@ -18,6 +18,7 @@ export default function MembershipPlansPage() {
 
   const oneMonthPrice = offers.data?.offers.find(offer => offer.durationMonths === 1)?.amountPayable;
   const isActiveTrial = selected?.isTrial === true && selected.status === "Active";
+  const isPaidSelf = selected?.planCode === "self" && !selected.isTrial && selected.status === "Active";
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-8">
@@ -30,6 +31,15 @@ export default function MembershipPlansPage() {
         Choose the Self membership that suits you. Your fitness history stays with your account.
       </p>
 
+      {isPaidSelf && selected?.program === program && (
+        <div className="mt-5 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-[#12395B]">
+          <p className="font-semibold">Renew without losing any paid days.</p>
+          <p className="mt-1 text-slate-700">
+            Your current membership remains active through {selected.endDate}.
+            Your renewal will start on the next eligible date shown at checkout.
+          </p>
+        </div>
+      )}
       {isActiveTrial && (
         <div className="mt-5 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-[#12395B]">
           <p className="font-semibold">Keep every day of your free trial.</p>

@@ -27,6 +27,7 @@ import SchedulePage from "../../pages/SchedulePage";
 import ProgressPage from "../../pages/ProgressPage";
 import ProgramPage from "../../pages/ProgramPage";
 import ProfilePage from "../../pages/ProfilePage";
+import MyWalletPage from "../../pages/MyWalletPage";
 
 import SessionPage from "../../pages/SessionPage";
 import SelfWorkoutDetailPage from "../../pages/SelfWorkoutDetailPage";
@@ -174,6 +175,7 @@ export default function AppRouter() {
               <Route path="/membership-checkout" element={<MemberCheckoutPage />} />
               <Route path="/my-purchases" element={<PurchaseHistoryPage />} />
 
+              <Route path="/wallet" element={<MyWalletPage />} />
               <Route
                 path="/profile"
                 element={<ProfilePage />}

@@ -12,6 +12,8 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 
 import PageContainer from "../components/layout/PageContainer";
+import WalletSummaryCard from "../components/wallet/WalletSummaryCard";
+import ReferralShareCard from "../components/referrals/ReferralShareCard";
 
 import {
   getCurrentMember,
@@ -321,6 +323,9 @@ export default function ProfilePage() {
             </div>
           </div>
         </section>
+
+        <WalletSummaryCard />
+        <ReferralShareCard />
 
         <section className="rounded-2xl bg-white p-6 shadow-sm">
           <h2 className="text-xl font-semibold text-slate-900">

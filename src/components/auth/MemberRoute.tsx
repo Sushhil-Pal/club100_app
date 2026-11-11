@@ -38,10 +38,17 @@ export default function MemberRoute() {
 
   const session = sessionQuery.data;
 
-  if (
-    sessionQuery.isError ||
-    !session?.authenticated
-  ) {
+  // Transient API errors must not be treated as a confirmed logout.
+  if (sessionQuery.isError) {
+    return (
+      <div role="alert" className="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-50 p-6 text-center">
+        <p className="text-sm text-slate-700">Unable to verify your Club100 session. Please retry.</p>
+        <button type="button" onClick={() => void sessionQuery.refetch()} className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white">Try again</button>
+      </div>
+    );
+  }
+
+  if (!session?.authenticated) {
     return (
       <Navigate
         to="/login"

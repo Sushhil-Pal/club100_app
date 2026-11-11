@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import PageContainer from "../components/layout/PageContainer";
+import WalletSummaryCard from "../components/wallet/WalletSummaryCard";
 import {
   getCurrentMember,
   getFreeAssessmentContext,
@@ -61,6 +62,7 @@ export default function AssessmentOnlyDashboardPage() {
           </p>
         </header>
 
+        <WalletSummaryCard />
         <section className="rounded-2xl bg-white p-6 shadow-sm">
           <p className="text-sm font-semibold uppercase tracking-wide text-[#2F80ED]">
             Free Fitness Assessment

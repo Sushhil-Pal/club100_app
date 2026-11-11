@@ -23,7 +23,7 @@ export default function PurchaseHistoryPage() {
         </div>
         <p className="font-semibold">{money(p.amountPayable)}</p>
         <p className="text-sm text-slate-600">Start: {date(p.startDate)} · End: {date(p.endDate)}</p>
-        {p.status === "Scheduled" && p.paymentStatus === "Paid" && <p className="text-sm text-teal-800">Payment received. Your membership will begin on {date(p.startDate)}. Your current trial remains available until its expiry.</p>}
+        {p.status === "Scheduled" && p.paymentStatus === "Paid" && <p className="text-sm text-teal-800">Payment received. Your membership will begin on {date(p.startDate)}. {p.trialEnrollmentId ? "Your current trial remains available until its expiry." : "Your existing paid membership remains available until its expiry."}</p>}
         {p.paymentStatus === "Pending" && <p className="text-sm text-amber-700">Payment not yet confirmed. Return to checkout to check its status or resume the existing order.</p>}
         {p.trialEnrollmentId && <p className="text-xs text-slate-500">Converted from trial: {p.trialEnrollmentId}</p>}
         <p className="text-xs text-slate-500">Enrollment: {p.enrollmentId}</p>

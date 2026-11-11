@@ -47,6 +47,7 @@ export type RegisterInput = {
   email?: string;
   password: string;
   registrationToken?: string;
+  referralCode?: string;
 };
 
 export type RegistrationContext = {
@@ -109,6 +110,7 @@ export async function register(
       password: input.password,
       registration_token:
         input.registrationToken ?? "",
+      referral_code: input.referralCode ?? "",
     }
   );
 }

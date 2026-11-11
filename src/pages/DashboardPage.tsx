@@ -9,6 +9,7 @@ import {
 } from "react-router-dom";
 
 import PageContainer from "../components/layout/PageContainer";
+import WalletSummaryCard from "../components/wallet/WalletSummaryCard";
 import AssessmentOnlyDashboardPage from "./AssessmentOnlyDashboardPage";
 import { getMyPurchases } from "../services/purchaseHistoryService";
 import AssessmentJourneyCard from "../components/assessment/AssessmentJourneyCard";
@@ -289,6 +290,7 @@ function EnrolledDashboardPage({ membershipBanner }: { membershipBanner: ReactNo
         </div>
 
         {membershipBanner}
+        <WalletSummaryCard />
 
         {/* --------------------------------------------------
             Next Session / Guided Workout
@@ -983,12 +985,23 @@ export default function DashboardPage() {
     queryFn: getMyPurchases,
     refetchInterval: 60_000,
   });
-  const scheduled = purchases.data?.purchases.find(
-    p => p.status === "Scheduled" && p.paymentStatus === "Paid"
-  );
   const selectedMembership = memberships.find(
     m => m.enrollmentId === selectedEnrollmentId
   );
+  const scheduled = purchases.data?.purchases.find(
+    p => p.status === "Scheduled" && p.paymentStatus === "Paid" &&
+      p.program === selectedMembership?.program && p.plan === selectedMembership?.plan
+  );
+  const currentPurchase = purchases.data?.purchases.find(
+    p => p.enrollmentId === selectedEnrollmentId && p.paymentStatus === "Paid"
+  );
+  const pendingRenewal = purchases.data?.purchases.find(
+    p => p.program === selectedMembership?.program && p.plan === selectedMembership?.plan &&
+      p.status === "Registered" && p.paymentStatus === "Pending"
+  );
+  const canRenew = !purchases.isPending && !purchases.isError && !scheduled &&
+    !pendingRenewal && currentPurchase && selectedMembership?.planCode === "self" &&
+    !selectedMembership.isTrial && selectedMembership.status === "Active";
   // Only offer conversion for the selected, currently active trial.
   // Don't show competing checkout prompts while purchase history is loading,
   // or after a paid membership has already been scheduled.
@@ -1028,11 +1041,36 @@ export default function DashboardPage() {
         <strong>Paid membership scheduled</strong>
         <p className="mt-1 text-sm">
           {scheduled.program} Self membership begins {scheduled.startDate}.
-          Your remaining trial days are preserved.
+          {scheduled.trialEnrollmentId
+            ? " Your remaining trial days are preserved."
+            : " Your current paid membership continues until its end date."}
         </p>
         <Link className="mt-2 inline-block text-sm font-semibold text-teal-700 underline" to="/my-purchases">
           View purchase details →
         </Link>
+    </section>
+  ) : pendingRenewal && selectedMembership?.planCode === "self" ? (
+    <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-950 shadow-sm">
+      <h2 className="text-lg font-bold">Checkout in progress</h2>
+      <p className="mt-2 text-sm">Your {pendingRenewal.program} membership payment is pending. Check its status or resume the same order; do not start a second payment if you were charged.</p>
+      <Link to={`/membership-checkout?program=${encodeURIComponent(pendingRenewal.program)}&months=${pendingRenewal.durationMonths}`}
+        className="mt-4 inline-block rounded-xl bg-[#2F80ED] px-5 py-3 text-sm font-semibold text-white hover:bg-[#1F6FD1]">
+        Check Checkout Status →
+      </Link>
+    </section>
+  ) : canRenew ? (
+    <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-[#12395B] shadow-sm">
+      <h2 className="text-lg font-bold">Renew your Self membership</h2>
+      <p className="mt-2 text-sm text-slate-700">
+        Your current {selectedMembership.program} membership continues through {formatDate(selectedMembership.endDate)}.
+        Renew now to schedule your next term without losing any remaining days.
+      </p>
+      <Link
+        to={`/membership-plans?program=${encodeURIComponent(selectedMembership.program)}`}
+        className="mt-4 inline-block rounded-xl bg-[#2F80ED] px-5 py-3 text-center text-sm font-semibold text-white hover:bg-[#1F6FD1]"
+      >
+        Renew Membership →
+      </Link>
     </section>
   ) : trial ? (
       <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-[#12395B] shadow-sm">

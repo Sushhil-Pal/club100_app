@@ -4,6 +4,7 @@ import {
 } from "react";
 import {
   useMutation,
+  useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
 import {
@@ -12,6 +13,8 @@ import {
 } from "react-router-dom";
 
 import { captureAssessmentDestination, consumePostAuthDestination, assessmentAuthLink } from "../utils/postAuthDestination";
+import { captureReferralFromSearch, clearPendingReferral, withPendingReferral } from "../utils/referralAttribution";
+import { validateReferralCode } from "../services/referralService";
 
 import {
   getRegistrationContext,
@@ -25,6 +28,18 @@ export default function RegisterPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   captureAssessmentDestination(window.location.search);
+  const [referralCode, setReferralCode] = useState(() =>
+    new URLSearchParams(window.location.search).has("token")
+      ? ""
+      : captureReferralFromSearch(window.location.search)
+  );
+  const referralValidation = useQuery({
+    queryKey: ["referral-valid", referralCode],
+    queryFn: () => validateReferralCode(referralCode),
+    enabled: Boolean(referralCode),
+    retry: false,
+    staleTime: 0,
+  });
 
   const [fullName, setFullName] =
     useState("");
@@ -68,6 +83,8 @@ export default function RegisterPage() {
         REGISTRATION_TOKEN_STORAGE_KEY,
         urlToken
       );
+      clearPendingReferral();
+      setReferralCode("");
 
       window.history.replaceState(
         {},
@@ -88,6 +105,8 @@ export default function RegisterPage() {
       return;
     }
 
+    clearPendingReferral();
+    setReferralCode("");
     setRegistrationToken(token);
     setIsPostPayment(true);
     setHandoffLoading(true);
@@ -132,6 +151,7 @@ export default function RegisterPage() {
         password,
         registrationToken:
           registrationToken || undefined,
+        referralCode: registrationToken ? undefined : referralCode || undefined,
       }),
 
     onSuccess: (response) => {
@@ -141,6 +161,10 @@ export default function RegisterPage() {
       sessionStorage.removeItem(
         REGISTRATION_TOKEN_STORAGE_KEY
       );
+      clearPendingReferral();
+      if (referralCode) {
+        sessionStorage.setItem("club100_referral_claim_notice", "Referral invitation recorded. Rewards depend on a qualifying paid membership.");
+      }
 
       if (
         response.member &&
@@ -178,6 +202,7 @@ export default function RegisterPage() {
     Boolean(mobile.trim()) &&
     password.length >= 8 &&
     password === confirmPassword &&
+    (!referralCode || referralValidation.data?.valid === true) &&
     !registerMutation.isPending;
 
 
@@ -414,9 +439,25 @@ export default function RegisterPage() {
               )}
             </div>
 
+            {!isPostPayment && referralCode && (
+              <div className="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm">
+                <p className="font-semibold text-[#12395B]">Member invitation: {referralCode}</p>
+                {referralValidation.isPending && <p className="mt-1 text-slate-600">Checking the referral code…</p>}
+                {referralValidation.isError && <p className="mt-1 text-red-700">Unable to validate this invitation. Retry when online or remove it.</p>}
+                {referralValidation.data && !referralValidation.data.valid && <p className="mt-1 text-red-700">This referral link is not accepting registrations. You can continue without it.</p>}
+                {referralValidation.data?.valid && <p className="mt-1 text-slate-600">Your invitation will be recorded when you create your account, before your first payment.</p>}
+                <button type="button" className="mt-2 text-sm font-semibold text-[#2F80ED] underline"
+                  onClick={() => { clearPendingReferral(); setReferralCode(""); }}>
+                  Remove invitation
+                </button>
+              </div>
+            )}
+
             {registerMutation.isError && (
               <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                We could not create your Club100 account. Please check your details or use a fresh account-creation link.
+                {registerMutation.error instanceof Error
+                  ? registerMutation.error.message
+                  : "We could not create your Club100 account. Please check your details."}
               </div>
             )}
 
@@ -434,7 +475,7 @@ export default function RegisterPage() {
               <p className="mt-6 text-center text-sm text-slate-500">
                 Already have an account?{" "}
                 <Link
-                  to={assessmentAuthLink("/login")}
+                  to={withPendingReferral(assessmentAuthLink("/login"))}
                   className="font-semibold text-[#2F80ED]"
                 >
                   Sign In

@@ -14,6 +14,7 @@ import InstallAppBanner from "../pwa/InstallAppBanner";
 import PwaInstallationTracker from "../pwa/PwaInstallationTracker";
 
 import PushNotificationPrompt from "../push/PushNotificationPrompt";
+import ReferralClaimNotice from "../referrals/ReferralClaimNotice";
 
 export default function AppShell() {
   return (
@@ -29,6 +30,7 @@ export default function AppShell() {
           <InstallAppBanner />
 
           <PushNotificationPrompt />
+          <ReferralClaimNotice />
 
           <div className="mb-4 md:hidden"><MembershipSelector /></div>
           <Outlet />

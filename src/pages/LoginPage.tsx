@@ -3,6 +3,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 
 import { captureAssessmentDestination, consumePostAuthDestination, assessmentAuthLink } from "../utils/postAuthDestination";
+import { captureReferralFromSearch, clearPendingReferral, pendingReferralCode, withPendingReferral } from "../utils/referralAttribution";
+import { claimMyReferral } from "../services/referralService";
 
 import {
   login,
@@ -11,6 +13,7 @@ import {
 export default function LoginPage() {
   const navigate = useNavigate();
   captureAssessmentDestination(window.location.search);
+  captureReferralFromSearch(window.location.search);
   const queryClient = useQueryClient();
 
   const [loginId, setLoginId] =
@@ -23,7 +26,22 @@ export default function LoginPage() {
     mutationFn: () =>
       login(loginId, password),
 
-    onSuccess: (response) => {
+    onSuccess: async (response) => {
+      // When an eligible existing member follows a shared link, claim before
+      // any subsequent paid checkout. Failed claims must never block login.
+      if (response.roles.includes("member") && response.member) {
+        const code = pendingReferralCode();
+        if (code) {
+          try {
+            await claimMyReferral(code);
+            sessionStorage.setItem("club100_referral_claim_notice", "Referral invitation recorded. Rewards depend on a qualifying paid membership.");
+          } catch {
+            sessionStorage.setItem("club100_referral_claim_notice", "This referral invitation could not be applied to your account. You can still use Club100 normally.");
+            // A failed claim must never block normal login.
+          }
+          finally { clearPendingReferral(); }
+        }
+      }
       // Prevent member-specific queries from surviving an account change.
       queryClient.clear();
       const isTrainer =
@@ -229,7 +247,7 @@ export default function LoginPage() {
             <p className="mt-6 text-center text-sm text-slate-500">
               New to Club100?{" "}
               <Link
-                to={assessmentAuthLink("/register")}
+                to={withPendingReferral(assessmentAuthLink("/register"))}
                 className="font-semibold text-[#2F80ED]"
               >
                 Create Account

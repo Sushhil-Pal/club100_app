@@ -47,10 +47,19 @@ export default function ProtectedRoute({
     );
   }
 
-  if (
-    sessionQuery.isError ||
-    !sessionQuery.data?.authenticated
-  ) {
+  // A failed network/server request is not proof that the user logged out.
+  // Preserve the current route and allow retry; redirect only on an explicit
+  // authenticated:false response from the session-status endpoint.
+  if (sessionQuery.isError) {
+    return (
+      <div role="alert" className="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-50 p-6 text-center">
+        <p className="text-sm text-slate-700">Unable to verify your Club100 session. Your session may still be active.</p>
+        <button type="button" onClick={() => void sessionQuery.refetch()} className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white">Try again</button>
+      </div>
+    );
+  }
+
+  if (!sessionQuery.data?.authenticated) {
     return (
       <Navigate
         to={location.pathname === "/free-trial" ? "/register?next=%2Ffree-trial" : "/login"}
